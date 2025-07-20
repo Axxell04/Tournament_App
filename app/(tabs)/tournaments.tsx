@@ -1,66 +1,111 @@
+import TournamentModal from "@/components/modals/TournamentModal";
 import TournamentCard from "@/components/TournamentCard";
+import { Tournament } from "@/interfaces/tournament";
 import { MaterialIcons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { FlatList, Modal, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { Button, H2, H3, H5, Paragraph, ScrollView, Separator, Text, XStack, YStack } from "tamagui";
 import "../../global.css";
 
 export default function Tournaments () {
-    let cards = ["1", "2", "3", "4", "5", "6", 7, 8, 9, 10, 11, 12, 13, 14, 15];
-    return (
-        <View className="flex-1 justify-center items-center bg-stone-900">
-            <Text className="text-3xl text-amber-400">
-                Torneos
-            </Text>
-            <View className="flex-1 w-full items-center p-4">
-                <View className="border border-amber-400 w-full rounded-md p-2">
-                    <Text className="text-amber-500 text-center p-1">
-                        Torneos Actuales
-                    </Text>
-                    <FlatList
-                        data={cards}
-                        renderItem={(item) => <TournamentCard name={item.item.toString()} />}
-                        keyExtractor={(_, idx) => idx.toString()}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ paddingVertical: 8, flexDirection: "row", gap: 4 }}
-                    />
-                </View>
-                <View className="mt-auto">
-                    <TouchableOpacity className="p-2 rounded-full bg-amber-400">
-                        <MaterialIcons size={30} name="add" color={"#1c1917"} />
-                    </TouchableOpacity>
-                </View>
-            </View>
+    let tournaments: Tournament[] = [
+        { id: 1, name: "UTM Champions", active: true, creator: "Director UTM", sport: "Fútbol" },
+        { id: 2, name: "PUCE Cup", active: true, creator: "Director PUCE", sport: "Fútbol" },
+        { id: 3, name: "Inter University", active: true, creator: "Organización deportiva Portoviejo", sport: "Fútbol" },
+    ]
+    let tournaments2: Tournament[] = [
+        { id: 1, name: "Software", active: true, creator: "Oscar López", sport: "Fútbol" },
+        { id: 2, name: "Medicina", active: true, creator: "Tatiana Cobeña", sport: "Fútbol" },
+        { id: 3, name: "Economía", active: true, creator: "Tito Gorozabel", sport: "Fútbol" },
+    ]
+    let [ modalVisible, setModalVisible ] = useState(false);
+    let [ tournamentSelected, setTournamentSelected ]: [ Tournament | undefined, React.Dispatch<React.SetStateAction<Tournament | undefined>> ] = useState();
 
-            <Modal 
-                transparent={true}
-                visible={true}
-            >   
-                <BlurView experimentalBlurMethod="dimezisBlurView" 
-                    tint="dark" 
-                    className="flex-1"
-                    intensity={60}
-                >
-                    <View className="flex-1 justify-center items-center ">
-                        <View className="flex-col items-center bg-stone-800 p-5 border border-r-stone-700 border-b-stone-700 border-t-amber-400 border-l-amber-400 rounded-md w-[300]">
-                            <Text className="text-amber-500">
-                                Modal
-                            </Text>
-                            <View className="gap-3 items-center">
-                                <TextInput className="text-amber-300" placeholder="Ingrese el nombre" placeholderTextColor={"#a8a29e"} />
-                                <TouchableOpacity className="bg-amber-400 rounded-md py-1 px-5">
-                                    <Text className="text-stone-800">
-                                        Crear
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity className="border border-amber-400 rounded-full p-2 mt-3">
-                                    <MaterialIcons size={25} name="close" color={"#fbbf24"} />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </BlurView>
-            </Modal>
-        </View>
+    // Setter Functions
+    function selectThisTournamet (tournamet: Tournament) {
+        setTournamentSelected(tournamet);
+    }
+
+    // Toggle Functions
+    function toggleModal(visible?: boolean) {
+        if (typeof visible !== "undefined") {
+            setModalVisible(visible);
+        } else {
+            setModalVisible(!modalVisible);
+        }
+    }
+    return (
+        <>
+        <YStack bg={"$background"} flex={1}>
+            <H2 color={"$colorFocus"} text={"center"} p={"$4"}>
+                Torneos
+            </H2>
+            <YStack flex={1} p={"$3"} items={"center"}>
+                <YStack  p={"$2"} rounded={"$4"} borderWidth={"$1"} borderColor={"$borderColor"} $maxMd={{flexDirection: "column"}}>
+                    <H5 color={"$color8"} text={"center"}>
+                        Torneos Actuales
+                    </H5>
+                    <ScrollView
+                    grow={0}
+                    horizontal
+                    >
+                        <XStack gap={"$2"}>
+                            {tournaments.map((tournament) => <TournamentCard tournament={tournament} selectThisTournemat={selectThisTournamet} key={tournament.id} />)}
+                        </XStack>
+                    </ScrollView>
+                </YStack>
+                {tournamentSelected && // Renderiza solo si hay un torneo seleccionado 
+                <YStack flex={1} width={"100%"} p={"$3"}>
+                    <YStack flex={1} width={"100%"} rounded={"$5"} theme={"dark_yellow"} borderWidth={"$0.5"} borderColor={"$borderColor"} bg={"$background"}>
+                        <H3 text={"center"} p={"$2"} color={"$colorFocus"}>
+                            {tournamentSelected.name}
+                        </H3>
+                        <XStack  gap={1} px={10}>
+                            <YStack width={100} flex={1}>
+                                <Paragraph size={"$5"} fontWeight="800" text={"center"} color={"$color8"}>
+                                    Dirigente
+                                </Paragraph>
+                                <Paragraph size={"$5"} text={"center"} color={"$color08"}>
+                                    {tournamentSelected.creator}
+                                </Paragraph>
+                            </YStack>
+                            <Separator vertical />
+                            <YStack width={100}>
+                                <Paragraph size={"$5"} fontWeight="800" text={"center"} color={"$color8"}>
+                                    Estado
+                                </Paragraph>
+                                <Paragraph size={"$5"} text={"center"} color={"$color08"}>
+                                    {tournamentSelected.active ? "Activo" : "Terminado"}
+                                </Paragraph>
+                            </YStack>
+                        </XStack>
+                        <ScrollView
+                            mt={5}
+                        >
+                            <YStack p={5} gap={5}>
+                                {tournaments2.map((tournament) => <TournamentCard tournament={tournament} selectThisTournemat={selectThisTournamet} key={tournament.id} />)}
+                            </YStack>
+                        </ScrollView>
+                    </YStack>
+
+                </YStack>
+                }
+                
+                <YStack mt={"auto"}>
+                    <Button flexDirection="column" theme={"yellow"} rounded={"$9"} bg={"$yellow11"} p={5} 
+                    onPress={() => toggleModal(true)}
+                    >
+                        <Text theme={"light"}>
+                            <MaterialIcons size={30} name="add" />
+                        </Text>
+                    </Button>
+                </YStack>
+            </YStack>
+
+            
+        </YStack>
+        <TournamentModal visible={modalVisible} toggleModal={toggleModal} />
+        </>
+        
+
     )
 }

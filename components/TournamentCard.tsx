@@ -1,13 +1,27 @@
-import { Text, View } from "react-native"
+import { Tournament } from "@/interfaces/tournament"
+import { Button, H3, Paragraph } from "tamagui"
 
-export default function TournamentCard ({name}: {name: string}) {
+interface Props {
+    tournament: Tournament
+    selectThisTournemat: (tournamet: Tournament) => void
+}
+
+export default function TournamentCard ({ tournament, selectThisTournemat }: Props) {
     return (
-        <View className="flex-row gap-2">
-            <View className="bg-amber-300 p-4 w-[200px] h-[100px] rounded-md">
-                <Text className="text-center">
-                    Torneo {name}
-                </Text>
-            </View>
-        </View>
+        <Button height={"$11"} flexDirection="column"
+        onPress={() => selectThisTournemat(tournament)}
+        >            
+            <H3 color={"$color8"} select={"none"}>
+                {tournament.name}
+            </H3>
+            <Paragraph color={"$color04"} select={"none"}>
+                {tournament.creator}
+            </Paragraph>
+            {/* <Card bg={"transparent"} z={1}
+            >
+                <Card.Header>
+                </Card.Header>
+            </Card> */}
+        </Button>
     )
 }
