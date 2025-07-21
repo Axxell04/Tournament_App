@@ -6,4 +6,12 @@ export interface Tournament {
     sport: Sport
     creator: string
     active: boolean
+    createdAt?: string
+    finishedAt?: string | null
+}
+
+export interface NewTournament{
+    name: string
+    sport: Sport
+    creator: string
 }
