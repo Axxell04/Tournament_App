@@ -40,7 +40,6 @@ export default function Tournaments () {
             const loadTeams = async () => {
                 const dbService = new DBService(db);
                 const data = await dbService.getTeams(tournamentSelected.id)
-                console.log(data);
                 setTeams(data);
             }
             loadTeams();

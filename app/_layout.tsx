@@ -1,4 +1,5 @@
 import DBProvider from "@/context-providers/db/DBProvider";
+import MatchesProvider from "@/context-providers/MatchesProvider";
 import TeamsProvider from "@/context-providers/TeamsProvider";
 import TournamentsProvider from "@/context-providers/TournamentsProvider";
 import { config } from "@/tamagui.config";
@@ -14,15 +15,17 @@ export default function RootLayout() {
       <Theme name={"dark_yellow"}>
         <DBProvider>
           <TournamentsProvider>
-            <TeamsProvider>              
-              <SafeAreaView className="flex-1 bg-stone-950">
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{
-                    headerShown: false
-                  }}/>
-                </Stack>
-              </SafeAreaView>
-              <StatusBar style="light" />
+            <TeamsProvider> 
+              <MatchesProvider>
+                <SafeAreaView className="flex-1 bg-stone-950">
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{
+                      headerShown: false
+                    }}/>
+                  </Stack>
+                </SafeAreaView>
+                <StatusBar style="light" />
+              </MatchesProvider>       
             </TeamsProvider>
           </TournamentsProvider>
         </DBProvider>

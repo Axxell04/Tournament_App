@@ -1,3 +1,4 @@
+import { Match, NewMatch } from "@/interfaces/match";
 import { NewTeam, Team } from "@/interfaces/team";
 import { NewTournament, Tournament } from "@/interfaces/tournament";
 import { SQLiteDatabase } from "expo-sqlite";
@@ -197,6 +198,83 @@ export class DBService {
             return false;
         }
         return true;
+    }
+
+    /**
+     * @returns Una promesa que resuelve una lista con los encuentros del torneo, o un arreglo vacío si ocurre un error
+     */
+    async getMatches () {
+        try {
+            return await this.db.getAllAsync<Match>("SELECT * FROM match");
+        } catch (error) {
+            console.log("Error al realizar la consulta: "+error)
+            return [];
+        }
+    }
+
+    /**
+     * 
+     * @param id - ID del encuentro que desea buscar
+     * @returns Una promesa que resuelve el encuentro si existe, y null si no lo encuentra u ocurre un error
+     */
+    async getMatchById (id: number) {
+        try {
+            return await this.db.getFirstAsync<Match>("SELECT * FROM match WHERE id = ?", [id]);
+        } catch (error) {
+            console.log("Error al realizar la consulta: "+error);
+            return null;
+        }
+    }
+
+    /**
+     * @param newMatch - Nuevo encuentro a registrar
+     * @returns true si la insersión es correcta, false si el equipo ya existe y null si ocurre un error
+     */
+    async addMatch (newMatch: NewMatch) {
+        try {
+            await this.db.runAsync("INSERT INTO match (id_tournament, id_first_team, id_second_team, plannedAt) VALUES (?,?,?,?)", [newMatch.id_tournament, newMatch.id_first_team, newMatch.id_second_team, newMatch.plannedAt]);
+            return true
+        } catch (error) {
+            console.log("Error al realizar la insersión: "+error);
+        }
+    }
+
+    /**
+     * 
+     * @param id - ID del encuentro a editar
+     * @param newMatch - Nueva información sobre el encuentro
+     * @returns Una promesa que resuelve el encuentro editado, o null si ocurre un error
+     */
+    async editMatch (id: number, newMatch: NewMatch) {
+        try {
+            await this.db.runAsync(`
+                UPDATE match
+                SET id_tournament = ?, id_first_team = ?, id_second_team = ?, plannedAt = ?
+                WHERE id = ?
+            `, [newMatch.id_tournament, newMatch.id_first_team, newMatch.id_second_team, newMatch.plannedAt, id])
+            return await this.getMatchById(id);
+        } catch (error) {
+            console.log("Error al realizar la actualización: "+error);
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * @param id - ID del encuentro a eliminar
+     * @returns true si la eliminación se realizó, o null si ocurrio un error
+     */
+    async deleteMatch (id: number) {
+        try {
+            await this.db.runAsync(`
+                DELETE FROM match
+                WHERE id = ?    
+            `, [id]);
+            return true;
+        } catch (error) {
+            console.log("Error al realizar la eliminación: "+error);
+            return null;
+        }
     }
 
 }

@@ -1,7 +1,8 @@
-import { Home, Trophy } from "@tamagui/lucide-icons";
+import { Dribbble, Home, Trophy } from "@tamagui/lucide-icons";
 import React, { useEffect, useState } from "react";
 import { Button, ButtonProps, SizableText, Tabs } from "tamagui";
 import Index from ".";
+import Matches from "./matches";
 import Tournaments from "./tournaments";
 // import { Tabs } from "expo-router";
 
@@ -22,10 +23,21 @@ export default function TabLayout () {
             <Tabs.Content value="tournaments" flex={1}>
                 <Tournaments />
             </Tabs.Content>
+            <Tabs.Content value="matches" flex={1}>
+                <Matches />
+            </Tabs.Content>
+
             <Tabs.List
                 // bg={"$red12"}
                 disablePassBorderRadius="top"
-            >
+                justify={"center"}
+            >   
+                <MyTab tabFocus={tabFocus} focusThisTab={focusThisTab} value="matches">
+                    <Dribbble size={20} />
+                    <SizableText>
+                        Encuentros
+                    </SizableText>
+                </MyTab>
                 <MyTab tabFocus={tabFocus} focusThisTab={focusThisTab} value="index">
                     <Home size={20} />
                     <SizableText>
@@ -52,9 +64,9 @@ function MyTab ({tabFocus, focusThisTab, children, value, ...otherProps}: { tabF
         } else {
             setIsFocus(false);
         }
-    }, [tabFocus]);
+    }, [tabFocus, value]);
     return (
-        <Button grow={1}
+        <Button grow={0}
             {...otherProps}
             pressStyle={{bg: "$colorTransparent"}}
             onPress={() => focusThisTab(value)}
