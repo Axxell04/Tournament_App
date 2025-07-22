@@ -1,3 +1,4 @@
+import { NewTeam, Team } from "@/interfaces/team";
 import { NewTournament, Tournament } from "@/interfaces/tournament";
 import { SQLiteDatabase } from "expo-sqlite";
 
@@ -41,10 +42,10 @@ export class DBService {
     async addTournament (newTournament: NewTournament) {
         try {
             if (await this.checkIfExistsTournament(newTournament)) { return false };
-            this.db.runAsync("INSERT INTO tournament (name, creator, sport) VALUES (?,?,?)", [newTournament.name, newTournament.creator, newTournament.sport]);
+            await this.db.runAsync("INSERT INTO tournament (name, creator, sport) VALUES (?,?,?)", [newTournament.name, newTournament.creator, newTournament.sport]);
             return true;
         } catch (error) {
-            console.log("Error al realizar la inserción: "+error)
+            console.log("Error al realizar la insersión: "+error)
             return null;
         }
     }
@@ -59,7 +60,7 @@ export class DBService {
      */
     async editTournamet (id: number, name: string, creator: string, sport: "Fútbol" | "Baloncesto", active: boolean) {
         try {
-            this.db.runAsync(`
+            await this.db.runAsync(`
                 UPDATE tournament
                 SET name = ?, creator = ?, sport = ?, active = ?
                 WHERE id = ?    
@@ -79,7 +80,7 @@ export class DBService {
      */
     async deleteTournamet (id: number) {
         try {
-            this.db.runAsync(`
+            await this.db.runAsync(`
                 DELETE FROM tournament 
                 WHERE id = ?    
             `, [id]);
@@ -102,4 +103,100 @@ export class DBService {
         }
         return true;
     }
+
+    /**
+     * @param id_tournament - ID del torneo al que pertenecen los equipos
+     * @returns Una promesa que resuelve una lista con los equipos del torneo, o un arreglo vacío si ocurre un error
+     */
+    async getTeams (id_tournament: number) {
+        try {
+            return await this.db.getAllAsync<Team>("SELECT * FROM team WHERE id_tournament = ?", [id_tournament]);
+        } catch (error) {
+            console.log("Error al realizar la consulta: "+error)
+            return [];
+        }
+    }
+
+    /**
+     * 
+     * @param id - ID del equipo que desea buscar
+     * @returns Una promesa que resuelve el equipo si lo encuentra, y null si no lo encuentra u ocurre un error
+     */
+    async getTeamById (id: number) {
+        try {
+            return await this.db.getFirstAsync<Team>("SELECT * FROM team WHERE id = ?", [id]);
+        } catch (error) {
+            console.log("Error al realizar la consulta: "+error);
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * @param id_tournament - ID del torneo del que formará parte el equipo
+     * @param newTeam - Nuevo equipo a registrar
+     * @returns true si la insersión es correcta, false si el equipo ya existe y null si ocurre un error
+     */
+    async addTeam (id_tournament: number, newTeam: NewTeam) {
+        try {
+            if (await this.checkIfExistsTeam(newTeam)) { return false };
+            await this.db.runAsync("INSERT INTO team (id_tournament, name, dt) VALUES (?,?,?)", [id_tournament, newTeam.name, newTeam.dt]);
+            return true
+        } catch (error) {
+            console.log("Error al realizar la insersión: "+error);
+        }
+    }
+
+    /**
+     * 
+     * @param id - ID del equipo a editar
+     * @param name - Nuevo nombre del equipo
+     * @param dt - Nuevo director técnico del equipo
+     * @returns Una promesa que resuelve el equipo editado, o null si ocurre un error
+     */
+    async editTeam (id: number, name: string, dt: string) {
+        try {
+            await this.db.runAsync(`
+                UPDATE team
+                SET name = ?, dt = ?
+                WHERE id = ?
+            `, [name, dt, id])
+            return await this.getTeamById(id);
+        } catch (error) {
+            console.log("Error al realizar la actualización: "+error);
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * @param id - ID del equipo a eliminar
+     * @returns true si la eliminación se realizó, o null si ocurrio un error
+     */
+    async deleteTeam (id: number) {
+        try {
+            await this.db.runAsync(`
+                DELETE FROM team
+                WHERE id = ?    
+            `, [id]);
+            return true;
+        } catch (error) {
+            console.log("Error al realizar la eliminación: "+error);
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * @param team - Equipo a verificar
+     * @returns true si el equipo existe, caso contrario false
+     */
+    private async checkIfExistsTeam (team: Team | NewTeam) {
+        const res = await this.db.getFirstAsync<Team>("SELECT * FROM team WHERE name = ?", [team.name]);
+        if (!res) {
+            return false;
+        }
+        return true;
+    }
+
 }

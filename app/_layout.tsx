@@ -1,4 +1,5 @@
 import DBProvider from "@/context-providers/db/DBProvider";
+import TeamsProvider from "@/context-providers/TeamsProvider";
 import TournamentsProvider from "@/context-providers/TournamentsProvider";
 import { config } from "@/tamagui.config";
 import { Stack } from "expo-router";
@@ -12,15 +13,17 @@ export default function RootLayout() {
     <TamaguiProvider config={config}>
       <Theme name={"dark_yellow"}>
         <DBProvider>
-          <TournamentsProvider>    
-            <SafeAreaView className="flex-1 bg-stone-950">
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{
-                headerShown: false
-              }}/>
-            </Stack>
-            </SafeAreaView>
-            <StatusBar style="light" />
+          <TournamentsProvider>
+            <TeamsProvider>              
+              <SafeAreaView className="flex-1 bg-stone-950">
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{
+                    headerShown: false
+                  }}/>
+                </Stack>
+              </SafeAreaView>
+              <StatusBar style="light" />
+            </TeamsProvider>
           </TournamentsProvider>
         </DBProvider>
       </Theme>

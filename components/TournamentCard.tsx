@@ -1,14 +1,14 @@
 import { Tournament } from "@/interfaces/tournament"
 import { useEffect, useState } from "react"
-import { Button, H3, Paragraph } from "tamagui"
+import { Button, H5, Paragraph } from "tamagui"
 
 interface Props {
     tournament: Tournament
-    selectThisTournemat: (tournamet: Tournament) => void
+    selectThisTournament: (tournamet: Tournament) => void
     tournamentSelected: Tournament | undefined
 }
 
-export default function TournamentCard ({ tournament, selectThisTournemat, tournamentSelected }: Props) {
+export default function TournamentCard ({ tournament, selectThisTournament, tournamentSelected }: Props) {
     const [ isSelected, setIsSelected ] = useState(false);
     useEffect(() => {
         if (tournamentSelected) {
@@ -21,21 +21,16 @@ export default function TournamentCard ({ tournament, selectThisTournemat, tourn
         }
     }, [tournamentSelected, tournament])
     return (
-        <Button height={"$11"} flexDirection="column"
-        onPress={() => selectThisTournemat(tournament)}
+        <Button height={"$11"} maxW={"$15"} flexDirection="column"
+        onPress={() => selectThisTournament(tournament)}
         bg={isSelected ? "$backgroundHover" : "$backgroundPress"}
         >            
-            <H3 color={"$color8"} select={"none"}>
+            <H5 color={"$color"} select={"none"} numberOfLines={1}>
                 {tournament.name}
-            </H3>
-            <Paragraph color={"$color04"} select={"none"}>
+            </H5>
+            <Paragraph color={"$color"} select={"none"} opacity={0.6} numberOfLines={1}>
                 {tournament.creator}
             </Paragraph>
-            {/* <Card bg={"transparent"} z={1}
-            >
-                <Card.Header>
-                </Card.Header>
-            </Card> */}
         </Button>
     )
 }
