@@ -277,4 +277,18 @@ export class DBService {
         }
     }
 
+    async solveMatch (id: number, goalsFirstTeam: number, goalsSecondTeams: number) {
+        try {
+            await this.db.runAsync(`
+                UPDATE match
+                SET goals_first_team = ?, goals_second_team = ?, executed = true
+                WHERE id = ?
+            `, [goalsFirstTeam, goalsSecondTeams, id]);
+            return true;
+        } catch (error) {
+            console.log("Error al realizar la operación: "+error);
+            return null;
+        }
+    }
+
 }

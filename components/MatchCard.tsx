@@ -2,6 +2,7 @@ import { Match } from "@/interfaces/match";
 import { Team } from "@/interfaces/team";
 import { Tournament } from "@/interfaces/tournament";
 import { DBService } from "@/services/db-service";
+import { CalendarCheck2, CalendarCog } from "@tamagui/lucide-icons";
 import { useSQLiteContext } from "expo-sqlite";
 import React, { useEffect, useState } from "react";
 import { Button, Paragraph, XStack, YStack } from "tamagui";
@@ -9,7 +10,7 @@ import { Button, Paragraph, XStack, YStack } from "tamagui";
 interface Props {
     match: Match
     matchSelected?: Match
-    selectThisMatch: (match: Match) => void;
+    selectThisMatch: (match: Match | undefined) => void;
     setModalMatchMode: React.Dispatch<React.SetStateAction<"add" | "edit" | "solve">>
     toggleModalMatchVisible: (visible?: boolean) => void
 }
@@ -43,9 +44,13 @@ export default function MatchCard ({ match, matchSelected, selectThisMatch, setM
     return (
         <Button bg={"$background08"} rounded={"$6"} p={15} py={10} height={"min-content"}
             onPress={() => {
-                selectThisMatch(match);
-                setModalMatchMode("edit");
-                toggleModalMatchVisible(true);
+                if (isSelected) {
+                    selectThisMatch(undefined);
+                } else {
+                    selectThisMatch(match);
+                }
+                // setModalMatchMode("edit");
+                // toggleModalMatchVisible(true);
             }}
         >
             <YStack width={"100%"}>                
@@ -79,6 +84,30 @@ export default function MatchCard ({ match, matchSelected, selectThisMatch, setM
                         </Paragraph>                    
                     </YStack>
                 </XStack>
+                {isSelected && 
+                <XStack gap={10} mt={5}>
+                    <Button 
+                        icon={<CalendarCog size={20} />}
+                        grow={1}
+                        onPress={() => {
+                            setModalMatchMode("edit");
+                            toggleModalMatchVisible(true);
+                        }}
+                    >
+                        Modificar
+                    </Button>
+                    <Button
+                        icon={<CalendarCheck2 size={20} />}
+                        grow={1}
+                        onPress={() => {
+                            setModalMatchMode("solve");
+                            toggleModalMatchVisible(true);
+                        }}
+                    >
+                        Disputar
+                    </Button>
+                </XStack>                
+                }
             </YStack>
 
         </Button>

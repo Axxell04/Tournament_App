@@ -2,12 +2,15 @@ import MatchCard from "@/components/MatchCard";
 import MatchModal from "@/components/modals/MatchModal";
 import { MatchContext } from "@/context-providers/MatchesProvider";
 import { Match } from "@/interfaces/match";
-import { CalendarCheck2, CalendarPlus } from "@tamagui/lucide-icons";
-import { useContext, useState } from "react";
+import { DBService } from "@/services/db-service";
+import { CalendarPlus } from "@tamagui/lucide-icons";
+import { useSQLiteContext } from "expo-sqlite";
+import { useContext, useEffect, useState } from "react";
 import { Button, ScrollView, XStack, YStack } from "tamagui";
 
 export default function Matches () {
-    const { matches } = useContext(MatchContext);
+    const db = useSQLiteContext();
+    const { matches, setMatches } = useContext(MatchContext);
 
     const [ viewMode, setViewMode ] = useState<"disputed" | "next">("disputed");
     const [ modalMatchVisible, setModalMatchVisible ] = useState(false);
@@ -28,9 +31,18 @@ export default function Matches () {
     }
 
     // Selection Functions
-    function selectThisMatch (match: Match) {
+    function selectThisMatch (match: Match | undefined) {
         setMatchSelected(match);
     }
+
+    useEffect(() => {
+        const loadMatches = async () => {
+            const dbService = new DBService(db);
+            const resMatches = await dbService.getMatches();
+            setMatches(resMatches);
+        };
+        loadMatches();
+    }, [viewMode, db, setMatches])
 
     return (
         <YStack bg={"$background"} flex={1} p={20}>
@@ -89,11 +101,6 @@ export default function Matches () {
                     }}
                 >
                     Añadir
-                </Button>
-                <Button
-                    icon={<CalendarCheck2 size={20} />}
-                >
-                    Disputar
                 </Button>
             </XStack>
 

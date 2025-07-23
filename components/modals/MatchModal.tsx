@@ -2,13 +2,15 @@ import { MatchContext } from "@/context-providers/MatchesProvider";
 import { TeamContext } from "@/context-providers/TeamsProvider";
 import { TournametContext } from "@/context-providers/TournamentsProvider";
 import { Match, NewMatch } from "@/interfaces/match";
+import { Team } from "@/interfaces/team";
+import { Tournament } from "@/interfaces/tournament";
 import { DBService } from "@/services/db-service";
 import { Trash, X } from "@tamagui/lucide-icons";
 import { BlurView } from "expo-blur";
 import { useSQLiteContext } from "expo-sqlite";
 import React, { useContext, useEffect, useState } from "react";
 import { Modal } from "react-native";
-import { Adapt, Button, Input, Label, Select, Sheet, YStack } from "tamagui";
+import { Adapt, Button, Input, Label, Paragraph, Select, Sheet, YStack } from "tamagui";
 
 interface Props {
     visible: boolean
@@ -26,10 +28,17 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
     const { teams, setTeams } = useContext(TeamContext);
     const { matches, setMatches } = useContext(MatchContext);
 
+    // Estados de edición
     const [ tournamentId, setTournamentId ] = useState("");
     const [ firstTeamId, setFirstTeamId ] = useState("");
     const [ secondTeamId, setSecondTeamId ] = useState("");
     const [ plannedAt, setPlannedAt ] = useState("");
+    // Estados de disputa
+    const [ tournament, setTournament] = useState<Tournament | undefined>();
+    const [ firstTeam, setFirstTeam ] = useState<Team | undefined>();
+    const [ secondTeam, setSecondTeam ] = useState<Team | undefined>();
+    const [ goalsFirstTeam, setGoalsFirstTeam ] = useState("0");
+    const [ goalsSecondTeam, setGoalsSecondTeam ] = useState("0");
 
 
     useEffect(() => {
@@ -53,10 +62,24 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
     // Lógica reactiva del formulario de edición
     useEffect(() => {
         if (matchSelected && mode === "edit" && visible) {
-            setTournamentId(matchSelected.id_tournament.toString())
+            setTournamentId(matchSelected.id_tournament.toString());
             setPlannedAt(matchSelected.plannedAt ?? "");
         } 
     }, [mode, visible, matchSelected])
+
+    // Lógica reactiva del formulario de disputa
+    useEffect(() => {
+        if (matchSelected && mode === "solve" && visible) {
+            setTournamentId(matchSelected.id_tournament.toString());
+            const loadFormData = async () => {
+                const dbService = new DBService(db);
+                setTournament((await dbService.getTournamentById(matchSelected.id_tournament)) ?? undefined);
+                setFirstTeam((await dbService.getTeamById(matchSelected.id_first_team)) ?? undefined);
+                setSecondTeam((await dbService.getTeamById(matchSelected.id_second_team)) ?? undefined);
+            }
+            loadFormData();
+        }
+    }, [mode, db, matchSelected, visible])
 
     useEffect(() => {
         const loadTeamsOfTournament = async () => {
@@ -111,15 +134,26 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
         toggleModal();
     }
 
-    async function deleteTournamet () {
-        // if (!tournamentSelected) { return };
-        // const dbService = new DBService(db);
-        // const res = await dbService.deleteTournamet(tournamentSelected.id);
-        // if (res && setTournametSelected) {
-        //     setTournametSelected(undefined);
-        // }
-        // setTournaments(await dbService.getTournaments());
-        // toggleModal();
+    async function deleteMatch () {
+        if (!matchSelected) { return };
+        const dbService = new DBService(db);
+        const res = await dbService.deleteMatch(matchSelected.id);
+        if (res && setMatchSelected) {
+            setMatchSelected(undefined);
+        }
+        setMatches(await dbService.getMatches());
+        toggleModal();
+    }
+
+    async function solveMatch () {
+        if (!tournament || !matchSelected || goalsFirstTeam === "" || goalsSecondTeam === "") { return };
+        const dbService = new DBService(db);
+        const res = await dbService.solveMatch(matchSelected.id, parseInt(goalsFirstTeam), parseInt(goalsSecondTeam));
+        if (res && setMatchSelected) {
+            setMatchSelected(undefined);
+        }
+        setMatches(await dbService.getMatches());
+        toggleModal();
     }
 
     function clearInputs () {
@@ -150,14 +184,33 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                             {mode === "add" ? "Nuevo Encuentro" : ( mode === "edit" ? "Editar Torneo" : "Disputar Encuentro")}
                         </Label>
                         <YStack items={"center"} gap={"$2"}>
-                            {/* <Input placeholder="Nombre del torneo" width={"80%"} placeholderTextColor="unset" text={"center"}
-                                onChangeText={(text) => setTournament(text)}
-                                value={tournament}
-                            />
-                            <Input placeholder="Creador del torneo" width={"80%"} placeholderTextColor="unset" text={"center"} 
-                                onChangeText={(text) => setFirstTeam(text)}
-                                value={firstTeam}
-                            /> */}
+                            {mode === "solve" && tournament && firstTeam && secondTeam
+                            ?
+                            <YStack gap={10} items={"center"} mb={20}>
+                                <Paragraph>
+                                    {tournament.name}
+                                </Paragraph>
+                                <YStack>
+                                    <Paragraph>
+                                        {firstTeam.name}
+                                    </Paragraph>
+                                    <Input placeholder="-" value={goalsFirstTeam} text={"center"} 
+                                        keyboardType="numeric"
+                                        onChangeText={(v) => setGoalsFirstTeam(v)}
+                                    />
+                                </YStack>
+                                <YStack>
+                                    <Paragraph>
+                                        {secondTeam.name}
+                                    </Paragraph>
+                                    <Input placeholder="-" value={goalsSecondTeam} text={"center"} 
+                                        keyboardType="numeric"
+                                        onChangeText={(v) => setGoalsSecondTeam(v)}
+                                    />
+                                </YStack>
+                            </YStack>
+                            :
+                            <>
                             <Select value={matchSelected?.id_tournament && mode === "edit" ? matchSelected.id_tournament.toString() : tournamentId } onValueChange={(value) => setTournamentId(value)}>
                                 <Select.Trigger width={"min-content"} px={"$7"}>
                                     {tournamentId 
@@ -302,17 +355,26 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                 keyboardType="numeric"
                                 onChangeText={(text) => setPlannedAt(text)}
                                 value={plannedAt}
-                            />                    
-                            { mode === "add" ?
+                            />
+                            </>
+                            }
+                            { mode === "add" &&
                                 <Button color={"$colorFocus"} onPress={addNewMatch}>
                                     Crear
-                                </Button> :
+                                </Button> 
+                            }
+                            { mode === "edit" &&
                                 <>
                                 <Button color={"$colorFocus"} onPress={editMatch}>
                                     Editar
                                 </Button>                    
-                                <Button icon={<Trash size={20} color={"$color06"} />} chromeless onPress={deleteTournamet} />
-                                </>
+                                <Button icon={<Trash size={20} color={"$color06"} />} chromeless onPress={deleteMatch} />
+                                </>                    
+                            }
+                            { mode === "solve" &&
+                                <Button color={"$colorFocus"} onPress={solveMatch}>
+                                    Resolver
+                                </Button>
                             }
                             <Button chromeless p={0} px={9} rounded={"$9"}
                             onPress={() => toggleModal(false)}
