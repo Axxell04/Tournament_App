@@ -1,30 +1,70 @@
-import { Dribbble, Home, Trophy } from "@tamagui/lucide-icons";
-import React, { useEffect, useState } from "react";
-import { Button, ButtonProps, SizableText, Tabs } from "tamagui";
+import { UserContext } from "@/context-providers/UserProvider";
+import { CircleUserRound, Dribbble, Home, Menu, Trophy } from "@tamagui/lucide-icons";
+import { Stack, useRouter } from "expo-router";
+import React, { useContext, useEffect, useState } from "react";
+import { Button, ButtonProps, Paragraph, SizableText, Tabs, XStack } from "tamagui";
 import Index from ".";
 import Matches from "./matches";
+import MenuScreen from "./menu";
 import Tournaments from "./tournaments";
 // import { Tabs } from "expo-router";
 
 export default function TabLayout () {
+    const { user } = useContext(UserContext);
+    const [ usernameToShow, setUsernameToShow ] = useState("");
+
+    const router = useRouter();
+
     const [ tabFocus, setTabFocus ] = useState("index");
     function focusThisTab (tabName: string) {
         setTabFocus(tabName);
     }
+
+    useEffect(() => {
+        if (!user) {
+            router.replace("/(auth)/login");        
+        } else if (user.isAnonymous) {
+            setUsernameToShow("Invitado");
+        } else {
+            setUsernameToShow(user.displayName as string);
+        }
+    }, [user, router])
 
     return (
         <Tabs flex={1} flexDirection="column" bg={"$background"}
             defaultValue="index"
             value={tabFocus}
         >
+            <XStack bg={"$colorTransparent"} px={10} py={5} gap={10} justify={"space-between"}>
+                <XStack items={"center"} gap={5}>
+                    <CircleUserRound size={30} opacity={0.9} />
+                    <Paragraph fontSize={18} opacity={0.9}>
+                        {usernameToShow}
+                    </Paragraph>
+                </XStack>
+                <Button 
+                    p={5}
+                    icon={<Menu size={30} />}
+                    chromeless
+                    onPress={() => focusThisTab("menu")}
+                >                
+                </Button>
+            </XStack>
             <Tabs.Content value="index" flex={1}>
+                <Stack.Screen options={{ headerShown: false }} />
                 <Index />
             </Tabs.Content>
             <Tabs.Content value="tournaments" flex={1}>
+                <Stack.Screen options={{ headerShown: false }} />
                 <Tournaments />
             </Tabs.Content>
             <Tabs.Content value="matches" flex={1}>
+                <Stack.Screen options={{ headerShown: false }} />
                 <Matches />
+            </Tabs.Content>
+            <Tabs.Content value="menu" flex={1}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <MenuScreen />
             </Tabs.Content>
 
             <Tabs.List
@@ -52,7 +92,6 @@ export default function TabLayout () {
                 </MyTab>
             </Tabs.List>
         </Tabs>
-
     )
 }
 
