@@ -92,6 +92,9 @@ export default function MenuScreen () {
                         </XStack>
                     </YStack>
                 </YStack>
+                <Button onPress={() => router.push("/(firebase)/user")}>
+                    Ir al firebase screen
+                </Button>
                 {user?.isAnonymous 
                 ? 
                 <Button 

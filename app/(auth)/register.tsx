@@ -1,4 +1,6 @@
-import { AuthContext } from "@/context-providers/auth/AuthProvider";
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
+import { User } from "@/interfaces/user";
+import { FirestoreService } from "@/services/firestore-service";
 import { Stack, useRouter } from "expo-router";
 import { FirebaseError } from "firebase/app";
 import {
@@ -10,7 +12,8 @@ import { ToastAndroid } from "react-native";
 import { Button, H4, Input, Label, YStack } from "tamagui";
 
 export default function LoginScreen() {
-  const { auth } = useContext(AuthContext);
+  const { auth, firestore } = useContext(FirebaseContext);
+  const firestoreService = new FirestoreService(firestore);
 
     const [ username, setUsername ] = useState("");
     const [ email, setEmail ] = useState("");
@@ -40,6 +43,13 @@ export default function LoginScreen() {
         })
 
         console.log(userCredential)
+        const user: User = {
+          id: userCredential.user.uid,
+          email: userCredential.user.email as string,
+          username: userCredential.user.displayName as string,
+          money: 100,
+        }
+        firestoreService.addUser(user);
         setUsername("");
         setEmail("");
         setPassword("");

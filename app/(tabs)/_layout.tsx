@@ -1,5 +1,7 @@
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { UserContext } from "@/context-providers/UserProvider";
-import { CircleUserRound, Dribbble, Home, Menu, Trophy } from "@tamagui/lucide-icons";
+import { FirestoreService } from "@/services/firestore-service";
+import { CircleUserRound, DollarSign, Dribbble, Home, Menu, Trophy } from "@tamagui/lucide-icons";
 import { Stack, useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import { Button, ButtonProps, Paragraph, SizableText, Tabs, XStack } from "tamagui";
@@ -11,9 +13,12 @@ import Tournaments from "./tournaments";
 
 export default function TabLayout () {
     const { user } = useContext(UserContext);
+    const { firestore } = useContext(FirebaseContext);
     const [ usernameToShow, setUsernameToShow ] = useState("");
+    const [ moneyToShow, setMoneyToShow ] = useState<number | undefined>();
 
     const router = useRouter();
+    const firestoreService = new FirestoreService(firestore);
 
     const [ tabFocus, setTabFocus ] = useState("index");
     function focusThisTab (tabName: string) {
@@ -21,26 +26,43 @@ export default function TabLayout () {
     }
 
     useEffect(() => {
+        const getMoney = async () => {
+            if (!user || user.isAnonymous) { return };
+            setMoneyToShow(await firestoreService.getMoney(user.uid));
+            console.log(moneyToShow);
+        }
+
         if (!user) {
             router.replace("/(auth)/login");        
         } else if (user.isAnonymous) {
             setUsernameToShow("Invitado");
         } else {
             setUsernameToShow(user.displayName as string);
+            getMoney();
         }
-    }, [user, router])
+    }, [user, router, firestoreService, moneyToShow])
 
     return (
         <Tabs flex={1} flexDirection="column" bg={"$background"}
             defaultValue="index"
             value={tabFocus}
         >
-            <XStack bg={"$colorTransparent"} px={10} py={5} gap={10} justify={"space-between"}>
-                <XStack items={"center"} gap={5}>
-                    <CircleUserRound size={30} opacity={0.9} />
-                    <Paragraph fontSize={18} opacity={0.9}>
-                        {usernameToShow}
-                    </Paragraph>
+            <XStack bg={"$colorTransparent"} px={10} py={5} gap={5} justify={"space-between"}>
+                <XStack items={"center"} gap={10}>                    
+                    <XStack items={"center"} gap={5}>
+                        <CircleUserRound size={30} opacity={0.9} />
+                        <Paragraph fontSize={18} opacity={0.9}>
+                            {usernameToShow}
+                        </Paragraph>                    
+                    </XStack>
+                    {(user && !user.isAnonymous) && 
+                        <XStack items={"center"} gap={5}>
+                            <DollarSign size={23} opacity={0.9} />
+                            <Paragraph fontSize={18} opacity={0.9}>
+                                {moneyToShow}
+                            </Paragraph>                    
+                        </XStack>
+                    }
                 </XStack>
                 <Button 
                     p={5}

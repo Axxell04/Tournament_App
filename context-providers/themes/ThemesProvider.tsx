@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useState } from "react";
 import { Theme, ThemeName } from "tamagui";
 
 interface ThemeContextValue {
@@ -13,9 +13,6 @@ export const ThemesContext = createContext<ThemeContextValue>({
 
 export default function ThemesProvider ({ children }: { children: React.ReactNode }) {
     const [ theme, setTheme ] = useState<ThemeName>("dark_yellow");
-    useEffect(() => {
-        console.log(theme)
-      }, [theme])
     return (
         <ThemesContext.Provider value={{ theme, setTheme }} >
             <Theme name={theme}>

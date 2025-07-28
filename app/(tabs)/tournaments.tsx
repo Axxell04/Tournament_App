@@ -100,7 +100,7 @@ export default function Tournaments () {
                 </YStack>
                 {tournamentSelected && // Renderiza solo si hay un torneo seleccionado 
                 <YStack flex={1} width={"100%"} p={"$3"}>
-                    <YStack flex={1} width={"100%"} rounded={"$5"} theme={"dark_yellow"} borderWidth={"$0.5"} borderColor={"$borderColor"} bg={"$background"}>
+                    <YStack flex={1} width={"100%"} rounded={"$5"} borderWidth={"$0.5"} borderColor={"$borderColor"} bg={"$background"}>
                         <H5 text={"center"} p={"$2"} color={"$colorFocus"} fontWeight={"bold"}>
                             {tournamentSelected.name}
                         </H5>

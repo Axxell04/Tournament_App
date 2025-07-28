@@ -1,4 +1,4 @@
-import AuthProvider from "@/context-providers/auth/AuthProvider";
+import AuthProvider from "@/context-providers/auth/FirebaseProvider";
 import { Stack } from "expo-router";
 
 export default function AuthLayout () {

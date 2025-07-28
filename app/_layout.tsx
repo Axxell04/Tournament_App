@@ -34,6 +34,9 @@ export default function RootLayout() {
                       <Stack.Screen name="(tabs)" options={{
                         headerShown: false
                       }}/>
+                      <Stack.Screen name="(firebase)" options={{
+                        headerShown: false
+                      }}/>                    
                     </Stack>
                   </SafeAreaView>
                   <StatusBar style="light" />

@@ -1,4 +1,4 @@
-import { AuthContext } from "@/context-providers/auth/AuthProvider";
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { UserContext } from "@/context-providers/UserProvider";
 import { Stack, useRouter } from "expo-router";
 import { FirebaseError } from "firebase/app";
@@ -10,7 +10,7 @@ import { useContext, useState } from "react";
 import { ToastAndroid } from "react-native";
 import { Button, H4, Input, Label, YStack } from "tamagui";
 export default function LoginScreen() {
-    const { auth } = useContext(AuthContext);
+    const { auth } = useContext(FirebaseContext);
     const { setUser } = useContext(UserContext);
 
     const [ email, setEmail ] = useState("");
@@ -34,6 +34,7 @@ export default function LoginScreen() {
         password.trim()
       );
       setUser(userCredential.user);
+      
       // console.log("Usuario autenticado:", userCredential.user);
       ToastAndroid.show(`Bienvenido ${userCredential.user.displayName}`, ToastAndroid.SHORT)
       clearInputs();
