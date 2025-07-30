@@ -116,6 +116,7 @@ export default function LoginScreen() {
                     text={"center"}
                     color={"$colorHover"}
                     onChangeText={(t) => setPassword(t)}
+                    secureTextEntry
                 />
                 </YStack>
             </YStack>
