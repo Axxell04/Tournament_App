@@ -1,6 +1,5 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { ThemesContext } from "@/context-providers/themes/ThemesProvider";
-import { UserContext } from "@/context-providers/UserProvider";
 import { LogIn, LogOut } from "@tamagui/lucide-icons";
 import { useRouter, } from "expo-router";
 import { signOut } from "firebase/auth";
@@ -8,7 +7,6 @@ import { useContext, useEffect, useState } from "react";
 import { Button, Paragraph, Switch, ThemeName, XStack, YStack } from "tamagui";
 
 export default function MenuScreen () {
-    const { user, setUser } = useContext(UserContext);
     const { theme, setTheme } = useContext(ThemesContext);
     const { auth } = useContext(FirebaseContext);
     const router = useRouter();
@@ -18,7 +16,6 @@ export default function MenuScreen () {
     function logout () {
         console.log(router.canGoBack())
         signOut(auth);
-        setUser(undefined);
         router.replace("/(auth)/login");
     }
 
@@ -99,7 +96,7 @@ export default function MenuScreen () {
                 <Button onPress={() => router.push("/(firebase)/user")}>
                     Ir al firebase screen
                 </Button>
-                {user?.isAnonymous 
+                {auth.currentUser?.isAnonymous 
                 ? 
                 <Button 
                     chromeless

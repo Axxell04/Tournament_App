@@ -14,9 +14,10 @@ interface Props {
     mode?: "add" | "edit"
     tournamentSelected?: Tournament
     setTournametSelected?: React.Dispatch<React.SetStateAction<Tournament | undefined>>
+    listTournamentsMode: "all" | "my"
 }
 
-export default function TournamentModal ({visible, toggleModal, mode="add", tournamentSelected, setTournametSelected }: Props) {
+export default function TournamentModal ({visible, toggleModal, mode="add", tournamentSelected, setTournametSelected, listTournamentsMode }: Props) {
     const { firestore, auth } = useContext(FirebaseContext);
     const { setTournaments } = useContext(TournametContext)
 
@@ -56,7 +57,7 @@ export default function TournamentModal ({visible, toggleModal, mode="add", tour
             sport: sport,
             active: true
         })
-        setTournaments(await fsService.getTournaments())
+        setTournaments(await fsService.getTournaments(listTournamentsMode === "my" ? auth.currentUser.uid : undefined))
         setLoading(false);
         clearInputs();
         toggleModal(false);
@@ -76,20 +77,20 @@ export default function TournamentModal ({visible, toggleModal, mode="add", tour
         if (res && setTournametSelected) {
             setTournametSelected(res);
         };
-        setTournaments(await fsService.getTournaments());
+        setTournaments(await fsService.getTournaments(listTournamentsMode === "my" ? auth.currentUser.uid : undefined))
         setLoading(false);
         toggleModal(false);
     }
 
     async function deleteTournamet () {
-        if (!tournamentSelected) { return };
+        if (!tournamentSelected || !auth.currentUser) { return };
         setLoading(true);
         const fsService = new FirestoreService(firestore);
         await fsService.deleteTournament(tournamentSelected.id as string);
         if (setTournametSelected) {
             setTournametSelected(undefined);
         }
-        setTournaments(await fsService.getTournaments());
+        setTournaments(await fsService.getTournaments(listTournamentsMode === "my" ? auth.currentUser.uid : undefined))
         setLoading(false);
         toggleModal();
     }

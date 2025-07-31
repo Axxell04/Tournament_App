@@ -28,6 +28,9 @@ export default function Tournaments () {
     let [ teamSelected, setTeamSelected ]: [ Team | undefined, React.Dispatch<React.SetStateAction<Team | undefined>> ] = useState();
     let [ isMyTournament, setIsMyTournament ] = useState(false);
 
+    // View mode
+    let [ listTournamentsMode, setListTournamentMode ] = useState<"all" | "my">("all");
+
     // Request's Status
     let [ tournamentsIsLoading, setTournamentsIsLoading ] = useState(false);
     let [ teamsIsLoading, setTeamsIsLoading ] = useState(false);
@@ -63,6 +66,17 @@ export default function Tournaments () {
             setIsMyTournament(false);
         }
     }, [tournamentSelected, setTeams, firestore, auth])
+
+    useEffect(() => {
+        const loadTournaments = async () => {
+            setTournamentsIsLoading(true);
+            const fsService = new FirestoreService(firestore);
+            setTournaments(await fsService.getTournaments(listTournamentsMode === "my" ? auth.currentUser?.uid : undefined));
+            setTournamentsIsLoading(false);
+        }
+        loadTournaments();
+        setTournamentSelected(undefined);
+    }, [listTournamentsMode, auth, firestore, setTournaments])
 
     // Setter Functions
     function selectThisTournament (tournamet: Tournament) {
@@ -112,11 +126,28 @@ export default function Tournaments () {
         <>
         <YStack bg={"$background"} flex={1}>
             <YStack flex={1} p={"$3"} items={"center"}>
-                <YStack  p={"$2"} rounded={"$4"} borderWidth={"$1"} borderColor={"$borderColor"} $maxMd={{flexDirection: "column"}} width={"100%"}>
-                    <H5 color={"$color9"} text={"center"}>
-                        Torneos Actuales
-                    </H5>
-                    {tournaments.length === 0 &&
+                <YStack  p={"$2"} gap={"$2"} rounded={"$4"} borderWidth={"$1"} borderColor={"$borderColor"} $maxMd={{flexDirection: "column"}} width={"100%"}>
+                    <XStack items={"center"} gap={10}>
+                        <Button 
+                            grow={listTournamentsMode === "all" ? 1 : 0}
+                            chromeless={listTournamentsMode !== "all" && true}
+                            color={"$colorFocus"}
+                            opacity={listTournamentsMode === "all" ? 1 : 0.8}
+                            onPress={() => setListTournamentMode("all")}
+                            >
+                            Todos los torneos
+                        </Button>
+                        <Button 
+                            grow={listTournamentsMode === "my" ? 1 : 0}
+                            chromeless={listTournamentsMode !== "my" && true}
+                            color={"$colorFocus"}
+                            opacity={listTournamentsMode === "my" ? 1 : 0.8}
+                            onPress={() => setListTournamentMode("my")}
+                        >
+                            Mís torneos
+                        </Button>
+                    </XStack>
+                    {(tournaments.length === 0 && !tournamentsIsLoading) &&
                         <YStack items={"center"} justify={"center"} py={20}>
                                 <Paragraph opacity={0.7} text={"center"} >
                                     No hay torneos registrados
@@ -186,7 +217,7 @@ export default function Tournaments () {
                             <YStack p={5} gap={5} flexWrap="wrap" flexDirection="row" justify={"center"} 
                             >
                                 {teams.map((team) => <TeamCard team={team} isMyTournament={isMyTournament} selectThisTeam={selectThisTeam} teamSelected={teamSelected} setModalTeamMode={setModalTeamMode} toggleModal={toggleTeamModal} key={team.id+team.name+team.dt} /> )}
-                                {(!auth.currentUser?.isAnonymous && auth.currentUser?.uid === tournamentSelected.ownerId) &&
+                                {(!auth.currentUser?.isAnonymous && auth.currentUser?.uid === tournamentSelected.ownerId && !teamsIsLoading) &&
                                 <Button 
                                     icon={<Plus size={20} />}
                                     pl={4} pr={7}
@@ -221,7 +252,8 @@ export default function Tournaments () {
             toggleModal={toggleTournamentModal} 
             mode={modalTournamentMode} 
             tournamentSelected={tournamentSelected} 
-            setTournametSelected={setTournamentSelected} 
+            setTournametSelected={setTournamentSelected}
+            listTournamentsMode={listTournamentsMode}
         />
         <TeamModal visible={modalTeamVisible} 
             toggleModal={toggleTeamModal} 

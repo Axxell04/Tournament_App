@@ -8,13 +8,16 @@ import {
 } from "firebase/auth";
 import { useContext, useState } from "react";
 import { ToastAndroid } from "react-native";
-import { Button, H4, Input, Label, YStack } from "tamagui";
+import { Button, H4, Input, Label, Spinner, YStack } from "tamagui";
 export default function LoginScreen() {
     const { auth } = useContext(FirebaseContext);
     const { setUser } = useContext(UserContext);
 
     const [ email, setEmail ] = useState("");
     const [ password, setPassword ] = useState("");
+
+    // Request's state
+    const [ loading, setLoading ] = useState(false);
 
   async function handleSignInUser() {
     if (!email) { 
@@ -28,12 +31,12 @@ export default function LoginScreen() {
     }
 
     try {
+      setLoading(true);
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email.trim(),
         password.trim()
       );
-      setUser(userCredential.user);
       
       // console.log("Usuario autenticado:", userCredential.user);
       ToastAndroid.show(`Bienvenido ${userCredential.user.displayName}`, ToastAndroid.SHORT)
@@ -55,11 +58,14 @@ export default function LoginScreen() {
         console.log("Error en autenticación:", error);
         ToastAndroid.show("A ocurrido un error", ToastAndroid.SHORT)
       }
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleSignInAsAnonymous () {
     try {
+      setLoading(true);
       const userCredential = await signInAnonymously(auth);
       setUser(userCredential.user);
       clearInputs();
@@ -69,6 +75,8 @@ export default function LoginScreen() {
         ToastAndroid.show(error.code, ToastAndroid.SHORT)
       }
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -87,6 +95,9 @@ export default function LoginScreen() {
         }}
       />
       <YStack bg={"$background"} flex={1} justify={"center"} items={"center"}>
+        {loading &&
+        <Spinner size="large" color={"$colorHover"} position="absolute" t={30} mx={"auto"} />
+        }
         <YStack mb={200} items={"center"} gap={70}>
           <H4 color={"$colorFocus"}>Login</H4>
           <YStack items={"center"} gap={30}>
@@ -116,12 +127,20 @@ export default function LoginScreen() {
                   />
                 </YStack>
             </YStack>
-            <Button onPress={() => handleSignInUser()}>Login</Button>
-            <Button color={"$color08"} chromeless onPress={() => router.push("/(auth)/register")}>
+            <Button onPress={() => handleSignInUser()}
+              disabled={loading}
+            >
+              Login
+            </Button>
+            <Button color={"$color08"} chromeless onPress={() => router.push("/(auth)/register")}
+              disabled={loading}
+            >
               Register
             </Button>
             {!router.canGoBack() &&
-              <Button color={"$color04"} chromeless onPress={handleSignInAsAnonymous}>
+              <Button color={"$color04"} chromeless onPress={handleSignInAsAnonymous}
+                disabled={loading}
+              >
                 Ingresar como invitado
               </Button>
             }

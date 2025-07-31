@@ -1,7 +1,7 @@
 import { Team } from "@/interfaces/firestore/team";
 import { Tournament } from "@/interfaces/firestore/tournament";
 import { User } from "@/interfaces/user";
-import { collection, deleteDoc, doc, Firestore, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { collection, CollectionReference, deleteDoc, doc, Firestore, getDoc, getDocs, Query, query, setDoc, updateDoc, where } from "firebase/firestore";
 
 export class FirestoreService {
     constructor(private firestore: Firestore) {}
@@ -27,9 +27,13 @@ export class FirestoreService {
         }
     }
 
-    async getTournaments () {
+    async getTournaments (userId?: string) {
         try {
-            const querySnapshot = await getDocs(collection(this.firestore, "tournaments"));
+            let q: Query | CollectionReference = collection(this.firestore, "tournaments");
+            if (userId) {
+                q = query(q, where("ownerId", "==", userId));
+            } 
+            const querySnapshot = await getDocs(q);
             const tournaments: Tournament[] = querySnapshot.docs.map((doc) => doc.data() as Tournament);
             return tournaments
         } catch (error) {
@@ -61,7 +65,10 @@ export class FirestoreService {
     }
 
     async deleteTournament (idTournament: string) {
-        try {
+        try {            
+            const snapshot = await getDocs(collection(this.firestore, `tournaments/${idTournament}/teams`));
+            const deletePromises = snapshot.docs.map((team) => deleteDoc(team.ref));
+            await Promise.all(deletePromises);
             await deleteDoc(doc(this.firestore, `tournaments/${idTournament}`));
         } catch (error) {
             console.log(error);
