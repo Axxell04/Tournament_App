@@ -1,4 +1,4 @@
-import { Tournament } from "@/interfaces/tournament";
+import { Tournament } from "@/interfaces/firestore/tournament";
 import React, { createContext, useState } from "react";
 
 interface TournamentContextValue {

@@ -1,19 +1,23 @@
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { ThemesContext } from "@/context-providers/themes/ThemesProvider";
 import { UserContext } from "@/context-providers/UserProvider";
 import { LogIn, LogOut } from "@tamagui/lucide-icons";
 import { useRouter, } from "expo-router";
+import { signOut } from "firebase/auth";
 import { useContext, useEffect, useState } from "react";
 import { Button, Paragraph, Switch, ThemeName, XStack, YStack } from "tamagui";
 
 export default function MenuScreen () {
     const { user, setUser } = useContext(UserContext);
     const { theme, setTheme } = useContext(ThemesContext);
+    const { auth } = useContext(FirebaseContext);
     const router = useRouter();
 
     const [ dark, setDark ] = useState(theme.includes("dark") ? true : false);
 
     function logout () {
         console.log(router.canGoBack())
+        signOut(auth);
         setUser(undefined);
         router.replace("/(auth)/login");
     }

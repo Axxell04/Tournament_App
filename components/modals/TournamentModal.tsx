@@ -1,12 +1,12 @@
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { TournametContext } from "@/context-providers/TournamentsProvider";
-import { NewTournament, Tournament } from "@/interfaces/tournament";
-import { DBService } from "@/services/db-service";
+import { Tournament } from "@/interfaces/firestore/tournament";
+import { FirestoreService } from "@/services/firestore-service";
 import { Trash, X } from "@tamagui/lucide-icons";
 import { BlurView } from "expo-blur";
-import { useSQLiteContext } from "expo-sqlite";
 import React, { useContext, useEffect, useState } from "react";
 import { Modal } from "react-native";
-import { Adapt, Button, Input, Label, Select, Separator, Sheet, Switch, XStack, YStack } from "tamagui";
+import { Adapt, Button, Input, Label, Select, Separator, Sheet, Spinner, Switch, XStack, YStack } from "tamagui";
 
 interface Props {
     visible: boolean
@@ -17,19 +17,20 @@ interface Props {
 }
 
 export default function TournamentModal ({visible, toggleModal, mode="add", tournamentSelected, setTournametSelected }: Props) {
-    const db = useSQLiteContext();
+    const { firestore, auth } = useContext(FirebaseContext);
     const { setTournaments } = useContext(TournametContext)
 
     const [ name, setName ] = useState("");
-    const [ creator, setCreator ] = useState("");
     const [ sport, setSport ] = useState<"Fútbol" | "Baloncesto" | "">("");
     const [ active, setActive ] = useState(false);
+
+    // Request's State
+    const [ loading, setLoading ] = useState(false);
 
 
     useEffect(() => {
         if (mode === "add") {
             setName("");
-            setCreator("");
             setSport("");
             setActive(false);
         }
@@ -38,7 +39,6 @@ export default function TournamentModal ({visible, toggleModal, mode="add", tour
     useEffect(() => {
         if (tournamentSelected && mode === "edit" && visible) {
             setName(tournamentSelected.name);
-            setCreator(tournamentSelected.creator);
             setSport(tournamentSelected.sport);
             setActive(tournamentSelected.active)
         } 
@@ -46,44 +46,56 @@ export default function TournamentModal ({visible, toggleModal, mode="add", tour
 
 
     async function addNewTournament () {
-        if (!name || !creator || !sport) { return };
-        const dbService = new DBService(db);
-        const newTournament: NewTournament = {
-            name,
-            creator,
-            sport
-        }
-        await dbService.addTournament(newTournament)
-        setTournaments(await dbService.getTournaments());
+        if (!name || !sport || !auth.currentUser) { return };
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        await fsService.addTournament({
+            ownerId: auth.currentUser.uid,
+            ownerName: auth.currentUser.displayName as string,
+            name: name,
+            sport: sport,
+            active: true
+        })
+        setTournaments(await fsService.getTournaments())
+        setLoading(false);
         clearInputs();
-        toggleModal();
+        toggleModal(false);
     }
 
     async function editTournamet () {
-        if (!name || !creator || !sport || !tournamentSelected) { return };
-        const dbService = new DBService(db);
-        const res = await dbService.editTournamet(tournamentSelected.id, name, creator, sport, active);
+        if (!name || !auth.currentUser || !sport || !tournamentSelected) { return };
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        const res = await fsService.updateTournament({
+            id: tournamentSelected.id,
+            ownerId: auth.currentUser.uid,
+            name: name.trim(),
+            sport: sport,
+            active: active
+        });
         if (res && setTournametSelected) {
             setTournametSelected(res);
         };
-        setTournaments(await dbService.getTournaments());
-        toggleModal();
+        setTournaments(await fsService.getTournaments());
+        setLoading(false);
+        toggleModal(false);
     }
 
     async function deleteTournamet () {
         if (!tournamentSelected) { return };
-        const dbService = new DBService(db);
-        const res = await dbService.deleteTournamet(tournamentSelected.id);
-        if (res && setTournametSelected) {
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        await fsService.deleteTournament(tournamentSelected.id as string);
+        if (setTournametSelected) {
             setTournametSelected(undefined);
         }
-        setTournaments(await dbService.getTournaments());
+        setTournaments(await fsService.getTournaments());
+        setLoading(false);
         toggleModal();
     }
 
     function clearInputs () {
         setName("");
-        setCreator("");
         setSport("");
     }
 
@@ -112,10 +124,10 @@ export default function TournamentModal ({visible, toggleModal, mode="add", tour
                                 onChangeText={(text) => setName(text)}
                                 value={name}
                             />
-                            <Input placeholder="Creador del torneo" width={"80%"} placeholderTextColor="unset" text={"center"} 
+                            {/* <Input placeholder="Creador del torneo" width={"80%"} placeholderTextColor="unset" text={"center"} 
                                 onChangeText={(text) => setCreator(text)}
                                 value={creator}
-                            />
+                            /> */}
                             <Select value={tournamentSelected?.sport && mode === "edit" ? tournamentSelected.sport : sport } onValueChange={(value) => setSport(value as "" | "Fútbol" | "Baloncesto")}>
                                 <Select.Trigger width={"min-content"} px={"$7"}>
                                     {sport 
@@ -178,9 +190,11 @@ export default function TournamentModal ({visible, toggleModal, mode="add", tour
                             }
                             <Button chromeless p={0} px={9} rounded={"$9"}
                             onPress={() => toggleModal(false)}
-                            icon={<X size={25} color={"$borderColorHover"} />}
+                            icon={!loading ? <X size={25} color={"$borderColorHover"} /> : null}
                             >
-                                
+                                {loading &&
+                                <Spinner size="large" color={"$colorHover"} />
+                                }
                             </Button>
 
                         </YStack>

@@ -1,4 +1,4 @@
-import { Tournament } from "@/interfaces/tournament"
+import { Tournament } from "@/interfaces/firestore/tournament"
 import { useEffect, useState } from "react"
 import { Button, H5, Paragraph } from "tamagui"
 
@@ -29,7 +29,7 @@ export default function TournamentCard ({ tournament, selectThisTournament, tour
                 {tournament.name}
             </H5>
             <Paragraph color={"$color"} select={"none"} opacity={0.6} numberOfLines={1}>
-                {tournament.creator}
+                {tournament.ownerName}
             </Paragraph>
         </Button>
     )

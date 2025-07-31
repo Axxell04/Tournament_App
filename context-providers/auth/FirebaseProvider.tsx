@@ -1,13 +1,6 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import React, { createContext, useState } from "react";
-import { firebaseConfig } from "../../firebase-config";
-
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const firestore = getFirestore(app);
+import { onAuthStateChanged } from "firebase/auth";
+import React, { createContext, useEffect, useState } from "react";
+import { app, auth, firestore } from "../../firebase-config";
 
 export const FirebaseContext = createContext({
     app: app,
@@ -19,6 +12,19 @@ export default function FirebaseProvider ({ children }: { children: React.ReactN
     const [ appState ] = useState(app);
     const [ authState ] = useState(auth);
     const [ firestoreState ] = useState(firestore);
+
+    useEffect(() => {
+        console.log('auth:', auth);
+
+        const unsub = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("Usuario autenticado: "+user.displayName);
+            } else {
+                console.log("Usuario no autenticado");
+            }
+        })
+        return unsub();
+    }, [])
     
     return (
         <FirebaseContext.Provider value={{app: appState, auth: authState, firestore: firestoreState}}>

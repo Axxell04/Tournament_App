@@ -2,19 +2,23 @@ import TeamModal from "@/components/modals/TeamModal";
 import TournamentModal from "@/components/modals/TournamentModal";
 import TeamCard from "@/components/TeamCard";
 import TournamentCard from "@/components/TournamentCard";
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { TeamContext } from "@/context-providers/TeamsProvider";
 import { TournametContext } from "@/context-providers/TournamentsProvider";
-import { Team } from "@/interfaces/team";
-import { Tournament } from "@/interfaces/tournament";
-import { DBService } from "@/services/db-service";
+import { Team } from "@/interfaces/firestore/team";
+import { Tournament } from "@/interfaces/firestore/tournament";
+import { FirestoreService } from "@/services/firestore-service";
 import { Pencil, Plus } from "@tamagui/lucide-icons";
-import { useSQLiteContext } from "expo-sqlite";
 import { useContext, useEffect, useState } from "react";
-import { Button, H5, Paragraph, ScrollView, Separator, XStack, YStack } from "tamagui";
+import { ToastAndroid } from "react-native";
+import { Button, H5, Paragraph, ScrollView, Separator, Spinner, XStack, YStack } from "tamagui";
 import "../../global.css";
 
 export default function Tournaments () {
-    const db = useSQLiteContext();
+    const { auth, firestore } = useContext(FirebaseContext);
+
+    const { tournaments, setTournaments } = useContext(TournametContext);
+    const { teams, setTeams } = useContext(TeamContext);
     let [ modalTournamentVisible, setModalTournamentVisible ] = useState(false);
     let [ modalTeamVisible, setModalTeamVisible ] = useState(false);
     let [ modalTournamentMode, setModalTournamentMode ] = useState<"add" | "edit">("add");
@@ -22,31 +26,43 @@ export default function Tournaments () {
     
     let [ tournamentSelected, setTournamentSelected ]: [ Tournament | undefined, React.Dispatch<React.SetStateAction<Tournament | undefined>> ] = useState();
     let [ teamSelected, setTeamSelected ]: [ Team | undefined, React.Dispatch<React.SetStateAction<Team | undefined>> ] = useState();
+    let [ isMyTournament, setIsMyTournament ] = useState(false);
 
-    const { tournaments, setTournaments } = useContext(TournametContext);
-    const { teams, setTeams } = useContext(TeamContext);
+    // Request's Status
+    let [ tournamentsIsLoading, setTournamentsIsLoading ] = useState(false);
+    let [ teamsIsLoading, setTeamsIsLoading ] = useState(false);
+
 
     useEffect(() => {
         const loadData = async () => {
-            const dbService = new DBService(db);
-            const data = await dbService.getTournaments();
-            setTournaments(data);
+            setTournamentsIsLoading(true);
+            const fsService = new FirestoreService(firestore);
+            setTournaments(await fsService.getTournaments());
+            setTournamentsIsLoading(false);
         }
         loadData();
-    }, [db, setTournaments]);
+    }, [setTournaments, firestore]);
 
     useEffect(() => {
         if (tournamentSelected) {
             const loadTeams = async () => {
-                const dbService = new DBService(db);
-                const data = await dbService.getTeams(tournamentSelected.id)
+                setTeamsIsLoading(true);
+                const fsService = new FirestoreService(firestore);
+                const data = await fsService.getTeams(tournamentSelected.id as string);
+                setTeamsIsLoading(false);
                 setTeams(data);
             }
             loadTeams();
+            if (tournamentSelected.ownerId === auth.currentUser?.uid) {
+                setIsMyTournament(true);
+            } else {
+                setIsMyTournament(false);
+            }
         } else {
             setTeams([]);
+            setIsMyTournament(false);
         }
-    }, [tournamentSelected, db, setTeams])
+    }, [tournamentSelected, setTeams, firestore, auth])
 
     // Setter Functions
     function selectThisTournament (tournamet: Tournament) {
@@ -74,6 +90,24 @@ export default function Tournaments () {
         }
     }
 
+    function openModalTournament () {
+        if (auth.currentUser && !auth.currentUser.isAnonymous) {
+            setModalTournamentMode("add");
+            toggleTournamentModal(true);
+        } else {
+            ToastAndroid.show("Debe iniciar sesión para continuar", ToastAndroid.SHORT);
+        }
+    }
+
+    function openModalTeam () {
+        if (auth.currentUser && !auth.currentUser.isAnonymous) {
+            setModalTeamMode("add");
+            toggleTeamModal(true);
+        } else {
+            ToastAndroid.show("Debe iniciar sesión para continuar", ToastAndroid.SHORT);
+        }
+    }
+
     return (
         <>
         <YStack bg={"$background"} flex={1}>
@@ -89,14 +123,21 @@ export default function Tournaments () {
                                 </Paragraph>                                
                         </YStack>
                     }
+                    {tournamentsIsLoading 
+                    ?
+                    <YStack width={"100%"} justify={"center"} height={30}>
+                        <Spinner size="large" color={"$colorHover"} self={"center"} /> 
+                    </YStack>
+                    :
                     <ScrollView
                     grow={0}
                     horizontal
-                    >
+                    >   
                         <XStack gap={"$2"}>
-                            {tournaments.map((tournament) => <TournamentCard tournament={tournament} selectThisTournament={selectThisTournament} tournamentSelected={tournamentSelected} key={tournament.id+tournament.name+tournament.creator} />)}
+                            {tournaments.map((tournament) => <TournamentCard tournament={tournament} selectThisTournament={selectThisTournament} tournamentSelected={tournamentSelected} key={tournament.id+tournament.name+tournament.ownerId} />)}
                         </XStack>
                     </ScrollView>
+                    }
                 </YStack>
                 {tournamentSelected && // Renderiza solo si hay un torneo seleccionado 
                 <YStack flex={1} width={"100%"} p={"$3"}>
@@ -110,7 +151,7 @@ export default function Tournaments () {
                                     Dirigente
                                 </Paragraph>
                                 <Paragraph size={"$5"} text={"center"} color={"$color08"}>
-                                    {tournamentSelected.creator}
+                                    {tournamentSelected.ownerName}
                                 </Paragraph>
                             </YStack>
                             <Separator vertical />
@@ -122,6 +163,8 @@ export default function Tournaments () {
                                     {tournamentSelected.active ? "Activo" : "Terminado"}
                                 </Paragraph>
                             </YStack>
+                            {isMyTournament &&
+                            <>
                             <Separator vertical />
                             <Button
                                 icon={<Pencil size={25} />}
@@ -130,23 +173,33 @@ export default function Tournaments () {
                                 self={"center"}
                                 onPress={() => { toggleTournamentModal() ; setModalTournamentMode("edit") }}
                             />         
+                            </>
+                            }
                         </XStack>
                         <ScrollView
                             mt={5}
                         >
-                            <YStack p={5} gap={5} flexWrap="wrap" flexDirection="row" justify={"center"} >
-                                {teams.map((team) => <TeamCard team={team} selectThisTeam={selectThisTeam} teamSelected={teamSelected} setModalTeamMode={setModalTeamMode} toggleModal={toggleTeamModal} key={team.id+team.name+team.dt} /> )}
+                            {teamsIsLoading 
+                            ?                            
+                            <Spinner size="large" color={"$colorHover"} /> 
+                            :
+                            <YStack p={5} gap={5} flexWrap="wrap" flexDirection="row" justify={"center"} 
+                            >
+                                {teams.map((team) => <TeamCard team={team} isMyTournament={isMyTournament} selectThisTeam={selectThisTeam} teamSelected={teamSelected} setModalTeamMode={setModalTeamMode} toggleModal={toggleTeamModal} key={team.id+team.name+team.dt} /> )}
+                                {(!auth.currentUser?.isAnonymous && auth.currentUser?.uid === tournamentSelected.ownerId) &&
                                 <Button 
                                     icon={<Plus size={20} />}
                                     pl={4} pr={7}
                                     self={"center"}
                                     chromeless
                                     opacity={0.7}
-                                    onPress={() => { setModalTeamMode("add"); toggleTeamModal(true)}}
+                                    onPress={openModalTeam}
                                 >
                                     Equipo
                                 </Button>
+                                }
                             </YStack>
+                            }
                         </ScrollView>
                     </YStack>
 
@@ -155,7 +208,7 @@ export default function Tournaments () {
                 
                 <YStack mt={"auto"}>
                     <Button flexDirection="column" rounded={99999} bg={"$backgroundHover"} p={5} px={6}
-                    onPress={() => { setModalTournamentMode("add") ; toggleTournamentModal(true) }}
+                    onPress={openModalTournament}
                     icon={<Plus size={30} />}
                     >
                     </Button>

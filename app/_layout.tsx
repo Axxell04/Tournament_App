@@ -1,9 +1,9 @@
+import FirebaseProvider from "@/context-providers/auth/FirebaseProvider";
 import DBProvider from "@/context-providers/db/DBProvider";
 import MatchesProvider from "@/context-providers/MatchesProvider";
 import TeamsProvider from "@/context-providers/TeamsProvider";
 import ThemesProvider, { ThemesContext } from "@/context-providers/themes/ThemesProvider";
 import TournamentsProvider from "@/context-providers/TournamentsProvider";
-import UserProvider from "@/context-providers/UserProvider";
 import { config } from "@/tamagui.config";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -20,14 +20,14 @@ export default function RootLayout() {
   return (
     <>
     <TamaguiProvider config={config}>
-      <ThemesProvider>
-        <UserProvider>          
+      <FirebaseProvider>        
+        <ThemesProvider>
           <DBProvider>
             <TournamentsProvider>
               <TeamsProvider> 
                 <MatchesProvider>
                   <SafeAreaView className="flex-1 bg-stone-950">
-                    <Stack initialRouteName="(auth)">
+                    <Stack initialRouteName="(tabs)">
                       <Stack.Screen name="(auth)" options={{
                         headerShown: false
                       }} />
@@ -44,8 +44,8 @@ export default function RootLayout() {
               </TeamsProvider>
             </TournamentsProvider>
           </DBProvider>
-        </UserProvider>
-      </ThemesProvider>
+        </ThemesProvider>
+      </FirebaseProvider>
     </TamaguiProvider>
     </>
 

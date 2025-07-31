@@ -1,13 +1,13 @@
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { TeamContext } from "@/context-providers/TeamsProvider";
-import { NewTeam, Team } from "@/interfaces/team";
-import { Tournament } from "@/interfaces/tournament";
-import { DBService } from "@/services/db-service";
+import { Team } from "@/interfaces/firestore/team";
+import { Tournament } from "@/interfaces/firestore/tournament";
+import { FirestoreService } from "@/services/firestore-service";
 import { Trash, X } from "@tamagui/lucide-icons";
 import { BlurView } from "expo-blur";
-import { useSQLiteContext } from "expo-sqlite";
 import React, { useContext, useEffect, useState } from "react";
 import { Modal } from "react-native";
-import { Button, Input, Label, YStack } from "tamagui";
+import { Button, Input, Label, Spinner, YStack } from "tamagui";
 
 interface Props {
     visible: boolean
@@ -19,11 +19,14 @@ interface Props {
 }
 
 export default function TeamModal ({visible, toggleModal, mode="add", teamSelected, setTeamSelected, tournamentSelected }: Props) {
-    const db = useSQLiteContext();
-    const { setTeams } = useContext(TeamContext)
+    const { firestore, auth } = useContext(FirebaseContext);
+    const { setTeams } = useContext(TeamContext);
 
     const [ name, setName ] = useState("");
     const [ dt, setDt ] = useState("");
+
+    // Estado de las peticiónes
+    const [ loading, setLoading ] = useState(false);
 
 
     useEffect(() => {
@@ -42,40 +45,49 @@ export default function TeamModal ({visible, toggleModal, mode="add", teamSelect
 
 
     async function addNewTeam () {
-        if (!name || !dt || !tournamentSelected) { return };
-        const dbService = new DBService(db);
-        const newTeam: NewTeam = {
-            id_tournament: tournamentSelected.id,
-            name,
-            dt
-        }
-        await dbService.addTeam(tournamentSelected.id, newTeam);
-        setTeams(await dbService.getTeams(tournamentSelected.id));
+        if (!name || !dt || !tournamentSelected || loading) { return };
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        await fsService.addTeam({
+            id_tournament: tournamentSelected.id as string,
+            name: name.trim(),
+            dt: dt.trim()
+        });
+        setTeams(await fsService.getTeams(tournamentSelected.id as string));
+        setLoading(false);
         clearInputs();
-        toggleModal();
-    }
-
-    async function editTournamet () {
-        if (!name || !dt || !teamSelected || !tournamentSelected) { return };
-        console.log(name,dt,teamSelected,tournamentSelected)
-        const dbService = new DBService(db);
-        const res = await dbService.editTeam(teamSelected.id, name, dt);
-        if (res && setTeamSelected) {
-            setTeamSelected(res);
-        };
-        setTeams(await dbService.getTeams(tournamentSelected.id));
         toggleModal(false);
     }
 
-    async function deleteTournamet () {
-        if (!teamSelected || !tournamentSelected) { return };
-        const dbService = new DBService(db);
-        const res = await dbService.deleteTeam(teamSelected.id);
+    async function editTeam () {
+        if (!name || !dt || !teamSelected || !tournamentSelected || loading) { return };
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        const res = await fsService.updateTeam({
+            id: teamSelected.id,
+            id_tournament: tournamentSelected.id as string,
+            name: name.trim(),
+            dt: dt.trim()
+        })
         if (res && setTeamSelected) {
+            setTeamSelected(res);
+        };
+        setTeams(await fsService.getTeams(tournamentSelected.id as string));
+        setLoading(false);
+        toggleModal(false);
+    }
+
+    async function deleteTeam () {
+        if (!teamSelected || !tournamentSelected) { return };
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        await fsService.deleteTeam(tournamentSelected.id as string, teamSelected.id as string);
+        if (setTeamSelected) {
             setTeamSelected(undefined);
         }
-        setTeams(await dbService.getTeams(tournamentSelected.id));
-        toggleModal();
+        setTeams(await fsService.getTeams(tournamentSelected.id as string));
+        setLoading(false);
+        toggleModal(false);
     }
 
     function clearInputs () {
@@ -97,9 +109,10 @@ export default function TeamModal ({visible, toggleModal, mode="add", teamSelect
             >
                 <YStack flex={1} justify={"center"} items={"center"} onPress={(e) => {toggleModal(false)}}                     
                 >
+                    {/* <Spinner position="absolute" t={30} mx={"auto"} size="large" color={"$colorHover"} /> */}
                     <YStack bg="$background" p={"$3"} borderWidth={"$0.5"} borderColor={"$borderColorHover"} rounded={"$4"} maxW={"80%"} minW={"70%"}
                         onPress={(e) => e.preventDefault()}
-                    >
+                    >                        
                         <Label color={"$colorFocus"} text={"center"}>
                             {mode === "add" ? "Nuevo Equipo" : "Editar Equipo"}
                         </Label>
@@ -113,21 +126,24 @@ export default function TeamModal ({visible, toggleModal, mode="add", teamSelect
                                 value={dt}
                             />                            
                             { mode === "add" ?
-                                <Button color={"$colorFocus"} onPress={addNewTeam}>
+                                <Button color={"$colorFocus"} onPress={addNewTeam} disabled={loading}>
                                     Crear
                                 </Button> :
                                 <>
-                                <Button color={"$colorFocus"} onPress={editTournamet}>
+                                <Button color={"$colorFocus"} onPress={editTeam} disabled={loading}>
                                     Editar
                                 </Button>                    
-                                <Button icon={<Trash size={20} color={"$color06"} />} chromeless onPress={deleteTournamet} />
+                                <Button icon={<Trash size={20} color={"$color06"} />} chromeless onPress={deleteTeam} />
                                 </>
                             }
                             <Button chromeless p={0} px={9} rounded={"$9"}
                             onPress={() => toggleModal(false)}
-                            icon={<X size={25} color={"$borderColorHover"} />}
+                            icon={!loading ? <X size={25} color={"$borderColorHover"} /> : null}
+                            disabled={loading}
                             >
-                                
+                                {loading &&
+                                <Spinner size="large" color={"$colorHover"} />
+                                }
                             </Button>
 
                         </YStack>

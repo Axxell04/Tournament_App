@@ -1,4 +1,4 @@
-import { Team } from "@/interfaces/team";
+import { Team } from "@/interfaces/firestore/team";
 import React, { createContext, useState } from "react";
 
 interface TeamContextValue {

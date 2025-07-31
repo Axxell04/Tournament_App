@@ -1,5 +1,6 @@
-import { Team } from "@/interfaces/team"
-import { useEffect, useState } from "react"
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider"
+import { Team } from "@/interfaces/firestore/team"
+import { useContext, useEffect, useState } from "react"
 import { Button, Paragraph } from "tamagui"
 
 
@@ -9,9 +10,11 @@ interface Props {
     teamSelected: Team | undefined
     toggleModal?: (visible?: boolean) => void
     setModalTeamMode?: React.Dispatch<React.SetStateAction<"add" | "edit">>
+    isMyTournament: boolean
 }
 
-export default function TeamCard ({ team, selectThisTeam, teamSelected, setModalTeamMode, toggleModal }: Props) {
+export default function TeamCard ({ team, selectThisTeam, teamSelected, setModalTeamMode, toggleModal, isMyTournament }: Props) {
+    const { auth } = useContext(FirebaseContext);
     const [ isSelected, setIsSelected ] = useState(false);
     useEffect(() => {
         if (teamSelected) {
@@ -35,6 +38,7 @@ export default function TeamCard ({ team, selectThisTeam, teamSelected, setModal
     return (
         <Button maxW={"$15"} flexDirection="column"
         onPress={() => { onPress() }}
+        disabled={!isMyTournament}
         bg={"$backgroundPress"}
         pressStyle={{bg: "$background", borderColor: "transparent", scale: 1.05}}
         >            
