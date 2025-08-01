@@ -1,7 +1,7 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { TeamContext } from "@/context-providers/TeamsProvider";
-import { Team } from "@/interfaces/firestore/team";
-import { Tournament } from "@/interfaces/firestore/tournament";
+import { Team } from "@/interfaces/team";
+import { Tournament } from "@/interfaces/tournament";
 import { FirestoreService } from "@/services/firestore-service";
 import { Trash, X } from "@tamagui/lucide-icons";
 import { BlurView } from "expo-blur";

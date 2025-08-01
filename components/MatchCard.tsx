@@ -1,6 +1,6 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
-import { Match } from "@/interfaces/firestore/match";
-import { Tournament } from "@/interfaces/firestore/tournament";
+import { Match } from "@/interfaces/match";
+import { Tournament } from "@/interfaces/tournament";
 import { CalendarCheck2, CalendarCog } from "@tamagui/lucide-icons";
 import React, { useContext, useEffect, useState } from "react";
 import { Button, Paragraph, XStack, YStack } from "tamagui";

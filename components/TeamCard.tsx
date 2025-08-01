@@ -1,5 +1,5 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider"
-import { Team } from "@/interfaces/firestore/team"
+import { Team } from "@/interfaces/team"
 import { useContext, useEffect, useState } from "react"
 import { Button, Paragraph } from "tamagui"
 

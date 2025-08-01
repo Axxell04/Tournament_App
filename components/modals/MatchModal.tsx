@@ -1,8 +1,8 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { MatchContext } from "@/context-providers/MatchesProvider";
 import { TeamContext } from "@/context-providers/TeamsProvider";
-import { Match } from "@/interfaces/firestore/match";
-import { Tournament } from "@/interfaces/firestore/tournament";
+import { Match } from "@/interfaces/match";
+import { Tournament } from "@/interfaces/tournament";
 import { FirestoreService } from "@/services/firestore-service";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Trash, X } from "@tamagui/lucide-icons";

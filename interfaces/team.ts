@@ -1,12 +1,6 @@
 export interface Team {
-    id: number
-    id_tournament: number
-    name: string
-    dt: string
-}
-
-export interface NewTeam {
-    id_tournament: number
+    id?: string
+    id_tournament: string
     name: string
     dt: string
 }

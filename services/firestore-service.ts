@@ -1,6 +1,6 @@
-import { Match } from "@/interfaces/firestore/match";
-import { Team } from "@/interfaces/firestore/team";
-import { Tournament } from "@/interfaces/firestore/tournament";
+import { Match } from "@/interfaces/match";
+import { Team } from "@/interfaces/team";
+import { Tournament } from "@/interfaces/tournament";
 import { User } from "@/interfaces/user";
 import { collection, CollectionReference, deleteDoc, doc, Firestore, getDoc, getDocs, Query, query, setDoc, updateDoc, where } from "firebase/firestore";
 

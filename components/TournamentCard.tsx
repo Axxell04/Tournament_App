@@ -1,4 +1,4 @@
-import { Tournament } from "@/interfaces/firestore/tournament"
+import { Tournament } from "@/interfaces/tournament"
 import { useEffect, useState } from "react"
 import { Button, H5, Paragraph } from "tamagui"
 

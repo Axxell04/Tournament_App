@@ -1,4 +1,4 @@
-import { Match } from "@/interfaces/firestore/match";
+import { Match } from "@/interfaces/match";
 import React, { createContext, useState } from "react";
 
 interface MatchContextValue {

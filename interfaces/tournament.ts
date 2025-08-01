@@ -1,17 +1,12 @@
 type Sport = "Fútbol" | "Baloncesto";
 
 export interface Tournament {
-    id: number
+    id?: string
     name: string
     sport: Sport
-    creator: string
+    ownerId: string
+    ownerName?: string
     active: boolean
     createdAt?: string
     finishedAt?: string | null
-}
-
-export interface NewTournament{
-    name: string
-    sport: Sport
-    creator: string
 }
