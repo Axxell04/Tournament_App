@@ -1,16 +1,15 @@
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { MatchContext } from "@/context-providers/MatchesProvider";
 import { TeamContext } from "@/context-providers/TeamsProvider";
-import { TournametContext } from "@/context-providers/TournamentsProvider";
-import { Match, NewMatch } from "@/interfaces/match";
-import { Team } from "@/interfaces/team";
-import { Tournament } from "@/interfaces/tournament";
-import { DBService } from "@/services/db-service";
+import { Match } from "@/interfaces/firestore/match";
+import { Tournament } from "@/interfaces/firestore/tournament";
+import { FirestoreService } from "@/services/firestore-service";
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Trash, X } from "@tamagui/lucide-icons";
 import { BlurView } from "expo-blur";
-import { useSQLiteContext } from "expo-sqlite";
 import React, { useContext, useEffect, useState } from "react";
 import { Modal } from "react-native";
-import { Adapt, Button, Input, Label, Paragraph, Select, Sheet, YStack } from "tamagui";
+import { Adapt, Button, Input, Label, Paragraph, Select, Sheet, Spinner, YStack } from "tamagui";
 
 interface Props {
     visible: boolean
@@ -20,11 +19,12 @@ interface Props {
     // setTournametSelected?: React.Dispatch<React.SetStateAction<Tournament | undefined>>
     matchSelected?: Match
     setMatchSelected?: React.Dispatch<React.SetStateAction<Match | undefined>>
+    myTournaments: Tournament[]
 }
 
-export default function MatchModal ({visible, toggleModal, mode="add", matchSelected, setMatchSelected }: Props) {
-    const db = useSQLiteContext();
-    const { setTournaments, tournaments } = useContext(TournametContext);
+export default function MatchModal ({visible, toggleModal, mode="add", matchSelected, setMatchSelected, myTournaments }: Props) {
+    const { auth, firestore } = useContext(FirebaseContext);
+
     const { teams, setTeams } = useContext(TeamContext);
     const { matches, setMatches } = useContext(MatchContext);
 
@@ -34,12 +34,25 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
     const [ secondTeamId, setSecondTeamId ] = useState("");
     const [ plannedAt, setPlannedAt ] = useState("");
     // Estados de disputa
-    const [ tournament, setTournament] = useState<Tournament | undefined>();
-    const [ firstTeam, setFirstTeam ] = useState<Team | undefined>();
-    const [ secondTeam, setSecondTeam ] = useState<Team | undefined>();
     const [ goalsFirstTeam, setGoalsFirstTeam ] = useState("0");
     const [ goalsSecondTeam, setGoalsSecondTeam ] = useState("0");
 
+    const [ showDateTimePicker, setShowDateTimePicker ] = useState(false);
+
+    // Request's state
+    const [ loading, setLoading ] = useState(false);
+
+    useEffect(() => {
+        if (!visible) {
+            setTeams([]);
+            setTournamentId("");
+            setFirstTeamId("");
+            setSecondTeamId("")
+            setPlannedAt("");
+            setGoalsFirstTeam("0");
+            setGoalsSecondTeam("0");
+        }
+    }, [visible, setTeams])
 
     useEffect(() => {
         if (mode === "add") {
@@ -48,47 +61,31 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
             setSecondTeamId("");
             setPlannedAt("");
         }
-    }, [mode])
-    
-    useEffect(() => {
-        const loadTournaments = async () => {
-            const dbService = new DBService(db);
-            const data = await dbService.getTournaments();
-            setTournaments(data);
-        };
-        loadTournaments();
-    }, [db, setTournaments, mode])
+    }, [mode, setMatchSelected])
 
     // Lógica reactiva del formulario de edición
     useEffect(() => {
         if (matchSelected && mode === "edit" && visible) {
-            setTournamentId(matchSelected.id_tournament.toString());
-            setPlannedAt(matchSelected.plannedAt ?? "");
+            setTournamentId(matchSelected.id_tournament);
+            setPlannedAt(matchSelected.plannedAt);
         } 
     }, [mode, visible, matchSelected])
 
     // Lógica reactiva del formulario de disputa
     useEffect(() => {
         if (matchSelected && mode === "solve" && visible) {
-            setTournamentId(matchSelected.id_tournament.toString());
-            const loadFormData = async () => {
-                const dbService = new DBService(db);
-                setTournament((await dbService.getTournamentById(matchSelected.id_tournament)) ?? undefined);
-                setFirstTeam((await dbService.getTeamById(matchSelected.id_first_team)) ?? undefined);
-                setSecondTeam((await dbService.getTeamById(matchSelected.id_second_team)) ?? undefined);
-            }
-            loadFormData();
+            setGoalsFirstTeam("0");
+            setGoalsSecondTeam("0");
         }
-    }, [mode, db, matchSelected, visible])
+    }, [mode, matchSelected, visible])
 
     useEffect(() => {
         const loadTeamsOfTournament = async () => {
-            const dbService = new DBService(db);
-            const resTeams = await dbService.getTeams(parseInt(tournamentId));
-            setTeams(resTeams);
-            if (matchSelected) {
-                setFirstTeamId(matchSelected.id_first_team.toString());
-                setSecondTeamId(matchSelected.id_second_team.toString());
+            const fsService = new FirestoreService(firestore);
+            setTeams(await fsService.getTeams(tournamentId));
+            if (matchSelected && mode !== "add") {
+                setFirstTeamId(matchSelected.id_first_team);
+                setSecondTeamId(matchSelected.id_second_team);
             } else {                
                 setFirstTeamId("");
                 setSecondTeamId("");
@@ -99,61 +96,77 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
         } else {
             setTeams([]);
         }
-    }, [tournamentId, db, setTeams, matchSelected])
+    }, [tournamentId, setTeams, matchSelected, firestore, mode])
 
     async function addNewMatch () {
         if (!tournamentId || !firstTeamId || !secondTeamId || !plannedAt) { return };
-        const dbService = new DBService(db);
-        const newMatch: NewMatch = {
-            id_tournament: parseInt(tournamentId),
-            id_first_team: parseInt(firstTeamId),
-            id_second_team: parseInt(secondTeamId),
-            plannedAt
-        }
-        await dbService.addMatch(newMatch);
-        setMatches(await dbService.getMatches());
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        await fsService.addMatch({
+            id_tournament: tournamentId,
+            id_first_team: firstTeamId,
+            id_second_team: secondTeamId,
+            name_tournament: myTournaments.find(t => t.id === tournamentId)?.name as string,
+            name_first_team: teams.find(t => t.id === firstTeamId)?.name as string,
+            name_second_team: teams.find(t => t.id === secondTeamId)?.name as string,
+            plannedAt: plannedAt,
+            executed: false
+        });
+        setMatches(await fsService.getMatches());
+        setLoading(false);
         clearInputs();
         toggleModal();
     }
 
     async function editMatch () {
         if (!tournamentId || !firstTeamId || !secondTeamId || !plannedAt || !matchSelected) { return };
-        console.log(tournamentId, firstTeamId, secondTeamId, plannedAt, matchSelected)
-        const dbService = new DBService(db);
-        const res = await dbService.editMatch(matchSelected.id, {
-            id_tournament: parseInt(tournamentId),
-            id_first_team: parseInt(firstTeamId),
-            id_second_team: parseInt(secondTeamId),
-            plannedAt
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        const res = await fsService.updateMatch({
+            id: matchSelected.id,
+            executed: matchSelected.executed,
+            id_tournament: tournamentId,
+            id_first_team: firstTeamId,
+            id_second_team: secondTeamId,
+            name_tournament: myTournaments.find(t => t.id === tournamentId)?.name as string,
+            name_first_team: teams.find(t => t.id === firstTeamId)?.name as string,
+            name_second_team: teams.find(t => t.id === secondTeamId)?.name as string,
+            plannedAt: plannedAt,
         });
-        console.log(res)
-        if (res && setMatchSelected) {
+        if (setMatchSelected) {
             setMatchSelected(res);
         };
-        setMatches(await dbService.getMatches());
+        setMatches(await fsService.getMatches());
+        setLoading(false);
         toggleModal();
     }
 
     async function deleteMatch () {
-        if (!matchSelected) { return };
-        const dbService = new DBService(db);
-        const res = await dbService.deleteMatch(matchSelected.id);
-        if (res && setMatchSelected) {
+        if (!matchSelected || !matchSelected.id) { return };
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        await fsService.deleteMatch(matchSelected.id);
+        if (setMatchSelected) {
             setMatchSelected(undefined);
         }
-        setMatches(await dbService.getMatches());
+        setMatches(await fsService.getMatches());
+        setLoading(false);
         toggleModal();
     }
 
     async function solveMatch () {
-        if (!tournament || !matchSelected || goalsFirstTeam === "" || goalsSecondTeam === "") { return };
-        const dbService = new DBService(db);
-        const res = await dbService.solveMatch(matchSelected.id, parseInt(goalsFirstTeam), parseInt(goalsSecondTeam));
-        if (res && setMatchSelected) {
+        if (!matchSelected || !matchSelected.id || goalsFirstTeam === "" || goalsSecondTeam === "") { return };
+        setLoading(true);
+        const fsService = new FirestoreService(firestore);
+        await fsService.solveMatch(matchSelected.id, parseInt(goalsFirstTeam), parseInt(goalsSecondTeam));
+        toggleModal(false);
+        if (setMatchSelected) {
             setMatchSelected(undefined);
         }
-        setMatches(await dbService.getMatches());
-        toggleModal();
+        setMatches(await fsService.getMatches());
+        setGoalsFirstTeam("0");
+        setGoalsSecondTeam("0");
+        setLoading(false);
     }
 
     function clearInputs () {
@@ -184,24 +197,24 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                             {mode === "add" ? "Nuevo Encuentro" : ( mode === "edit" ? "Editar Torneo" : "Disputar Encuentro")}
                         </Label>
                         <YStack items={"center"} gap={"$2"}>
-                            {mode === "solve" && tournament && firstTeam && secondTeam
+                            {mode === "solve" && matchSelected 
                             ?
                             <YStack gap={10} items={"center"} mb={20}>
                                 <Paragraph>
-                                    {tournament.name}
+                                    {matchSelected.name_tournament}
                                 </Paragraph>
-                                <YStack>
+                                <YStack items={"center"}>
                                     <Paragraph>
-                                        {firstTeam.name}
+                                        {matchSelected.name_first_team}
                                     </Paragraph>
                                     <Input placeholder="-" value={goalsFirstTeam} text={"center"} 
                                         keyboardType="numeric"
                                         onChangeText={(v) => setGoalsFirstTeam(v)}
                                     />
                                 </YStack>
-                                <YStack>
+                                <YStack items={"center"}>
                                     <Paragraph>
-                                        {secondTeam.name}
+                                        {matchSelected.name_second_team}
                                     </Paragraph>
                                     <Input placeholder="-" value={goalsSecondTeam} text={"center"} 
                                         keyboardType="numeric"
@@ -211,7 +224,7 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                             </YStack>
                             :
                             <>
-                            <Select value={matchSelected?.id_tournament && mode === "edit" ? matchSelected.id_tournament.toString() : tournamentId } onValueChange={(value) => setTournamentId(value)}>
+                            <Select value={matchSelected?.id_tournament && mode === "edit" ? matchSelected.id_tournament : tournamentId } onValueChange={(value) => setTournamentId(value)}>
                                 <Select.Trigger width={"min-content"} px={"$7"}>
                                     {tournamentId 
                                     ? <Select.Value placeholder="Torneo" color="$color" items={"center"} text={"center"} />
@@ -239,12 +252,12 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                             >
                                                 Torneos
                                             </Select.Label>                                                                                        
-                                            {tournaments.map((tournament, index) => (
-                                                <Select.Item index={tournament.id+2*5} key={tournament.id+tournament.creator+tournament.name}
-                                                    value={tournament.id.toString()} 
+                                            {myTournaments.map((tournament, index) => (
+                                                <Select.Item index={myTournaments.indexOf(tournament)+2*5} key={tournament.id+tournament.ownerId+tournament.name}
+                                                    value={tournament.id as string} 
                                                     bg={"$backgroundHover"} 
-                                                    borderBottomEndRadius={index === tournaments.length-1 ? "$2" : "$0"} 
-                                                    borderBottomStartRadius={index === tournaments.length-1 ? "$2" : "$0"}
+                                                    borderBottomEndRadius={index === myTournaments.length-1 ? "$2" : "$0"} 
+                                                    borderBottomStartRadius={index === myTournaments.length-1 ? "$2" : "$0"}
                                                     height={"min-content"}
                                                 >
                                                     <Select.ItemText>
@@ -257,7 +270,7 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                     <Select.ScrollDownButton />
                                 </Select.Content>
                             </Select>
-                            <Select value={matchSelected && mode === "edit" ? matchSelected?.id_first_team.toString() : firstTeamId } onValueChange={(value) => setFirstTeamId(value)}>
+                            <Select value={matchSelected && mode === "edit" ? matchSelected.id_first_team : firstTeamId } onValueChange={(value) => setFirstTeamId(value)}>
                                 <Select.Trigger width={"min-content"} px={"$7"}>
                                     { firstTeamId
                                     ? <Select.Value placeholder="Primer equipo" color="$color" items={"center"} text={"center"} />
@@ -286,13 +299,13 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                                 Equipos
                                             </Select.Label>                                                                                        
                                             {teams.map((team, index) => (
-                                                <Select.Item index={team.id+2*5} key={team.id+team.dt+team.name}
-                                                    value={team.id.toString()} 
+                                                <Select.Item index={teams.indexOf(team)+2*5} key={team.id+team.dt+team.name}
+                                                    value={team.id as string} 
                                                     bg={"$backgroundHover"} 
                                                     borderBottomEndRadius={index === teams.length-1 ? "$2" : "$0"} 
                                                     borderBottomStartRadius={index === teams.length-1 ? "$2" : "$0"}
                                                     height={"min-content"}
-                                                    display={team.id.toString() === secondTeamId ? "none" : "flex"}
+                                                    display={team.id === secondTeamId ? "none" : "flex"}
                                                 >
                                                     <Select.ItemText>
                                                         {team.name}
@@ -333,13 +346,13 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                                 Equipos
                                             </Select.Label>                                                                                        
                                             {teams.map((team, index) => (
-                                                <Select.Item index={team.id+2*5} key={team.id+team.dt+team.name}
-                                                    value={team.id.toString()} 
+                                                <Select.Item index={teams.indexOf(team)+2*5} key={team.id+team.dt+team.name}
+                                                    value={team.id as string} 
                                                     bg={"$backgroundHover"} 
                                                     borderBottomEndRadius={index === teams.length-1 ? "$2" : "$0"} 
                                                     borderBottomStartRadius={index === teams.length-1 ? "$2" : "$0"}
                                                     height={"min-content"}
-                                                    display={team.id.toString() === firstTeamId ? "none" : "flex"}
+                                                    display={team.id === firstTeamId ? "none" : "flex"}
                                                 >
                                                     <Select.ItemText>
                                                         {team.name}
@@ -351,36 +364,52 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                     <Select.ScrollDownButton />
                                 </Select.Content>
                             </Select>
-                            <Input placeholder="AA-MM-DD" width={"80%"} placeholderTextColor="unset" text={"center"} textContentType="password"
+                            {/* <Input placeholder="AA-MM-DD" width={"80%"} placeholderTextColor="unset" text={"center"} textContentType="password"
                                 keyboardType="numeric"
                                 onChangeText={(text) => setPlannedAt(text)}
                                 value={plannedAt}
+                            /> */}
+                            <Button 
+                                bg={"$backgroundPress"} 
+                                borderColor={"$borderColorPress"} 
+                                color={plannedAt ? "$color" : "$color06"}
+                                onPress={() => setShowDateTimePicker(true)}
+                            >
+                                {plannedAt ? plannedAt : "DD-MM-AA"}
+                            </Button>
+                            {showDateTimePicker &&
+                            <DateTimePicker mode="date" value={new Date()} minimumDate={new Date()} timeZoneName="America/Guayaquil"
+                                onChange={(e, date) => {setPlannedAt(date?.toLocaleDateString() ?? ""); setShowDateTimePicker(false)}}
                             />
+                            }
                             </>
                             }
                             { mode === "add" &&
-                                <Button color={"$colorFocus"} onPress={addNewMatch}>
+                                <Button color={"$colorFocus"} onPress={addNewMatch} disabled={loading}>
                                     Crear
                                 </Button> 
                             }
                             { mode === "edit" &&
                                 <>
-                                <Button color={"$colorFocus"} onPress={editMatch}>
+                                <Button color={"$colorFocus"} onPress={editMatch} disabled={loading}>
                                     Editar
                                 </Button>                    
-                                <Button icon={<Trash size={20} color={"$color06"} />} chromeless onPress={deleteMatch} />
+                                <Button icon={<Trash size={20} color={"$color06"} />} chromeless onPress={deleteMatch} disabled={loading} />
                                 </>                    
                             }
                             { mode === "solve" &&
-                                <Button color={"$colorFocus"} onPress={solveMatch}>
+                                <Button color={"$colorFocus"} onPress={solveMatch} disabled={loading}>
                                     Resolver
                                 </Button>
                             }
                             <Button chromeless p={0} px={9} rounded={"$9"}
                             onPress={() => toggleModal(false)}
-                            icon={<X size={25} color={"$borderColorHover"} />}
-                            >
-                                
+                            icon={!loading ? <X size={25} color={"$borderColorHover"} /> : null}
+                            disabled={loading}
+                            >   
+                                {loading &&
+                                <Spinner size="large" color={"$colorHover"} />                               
+                                }
                             </Button>
 
                         </YStack>

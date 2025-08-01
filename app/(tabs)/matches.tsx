@@ -1,21 +1,28 @@
 import MatchCard from "@/components/MatchCard";
 import MatchModal from "@/components/modals/MatchModal";
+import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { MatchContext } from "@/context-providers/MatchesProvider";
-import { Match } from "@/interfaces/match";
-import { DBService } from "@/services/db-service";
+import { auth } from "@/firebase-config";
+import { Match } from "@/interfaces/firestore/match";
+import { Tournament } from "@/interfaces/firestore/tournament";
+import { FirestoreService } from "@/services/firestore-service";
 import { CalendarPlus } from "@tamagui/lucide-icons";
-import { useSQLiteContext } from "expo-sqlite";
 import { useContext, useEffect, useState } from "react";
 import { Button, ScrollView, XStack, YStack } from "tamagui";
 
 export default function Matches () {
-    const db = useSQLiteContext();
+    const { firestore } = useContext(FirebaseContext);
     const { matches, setMatches } = useContext(MatchContext);
+
+    const [ myTournaments, setMyTournaments ] = useState<Tournament[]>([]);
 
     const [ viewMode, setViewMode ] = useState<"disputed" | "next">("disputed");
     const [ modalMatchVisible, setModalMatchVisible ] = useState(false);
     const [ modalMatchMode, setModalMatchMode ] = useState<"add" | "edit" | "solve">("add");
     const [ matchSelected, setMatchSelected ] = useState<Match | undefined>();
+
+    // Request's state
+    const [ matchesIsLoading, setMatchesIsLoading ] = useState(false);
 
     // Toggle functions
     function toggleViewMode (mode: "disputed" | "next") {
@@ -37,12 +44,12 @@ export default function Matches () {
 
     useEffect(() => {
         const loadMatches = async () => {
-            const dbService = new DBService(db);
-            const resMatches = await dbService.getMatches();
-            setMatches(resMatches);
+            const fsService = new FirestoreService(firestore);
+            setMatches(await fsService.getMatches());
+            setMyTournaments(await fsService.getTournaments(auth.currentUser?.uid));
         };
         loadMatches();
-    }, [viewMode, db, setMatches])
+    }, [viewMode, setMatches, firestore])
 
     return (
         <YStack bg={"$background"} flex={1} p={20}>
@@ -72,17 +79,19 @@ export default function Matches () {
                                             selectThisMatch={selectThisMatch}
                                             setModalMatchMode={setModalMatchMode}
                                             toggleModalMatchVisible={toggleModalMatchVisible}
-                                            key={match.id+match.id_first_team+match.id_tournament}                             
-                                        />
-                                    )
-                                } else if (viewMode === "disputed" && match.executed) {
-                                    return (
-                                        <MatchCard match={match}
+                                            key={match.id+match.id_first_team+match.id_tournament} 
+                                            myTournaments={myTournaments}                          
+                                            />
+                                        )
+                                    } else if (viewMode === "disputed" && match.executed) {
+                                        return (
+                                            <MatchCard match={match}
                                             matchSelected={matchSelected}
                                             selectThisMatch={selectThisMatch}
                                             setModalMatchMode={setModalMatchMode}
                                             toggleModalMatchVisible={toggleModalMatchVisible}
                                             key={match.id+match.id_first_team+match.id_tournament}                             
+                                            myTournaments={myTournaments}                          
                                         />
                                     )                                    
                                 }
@@ -93,6 +102,7 @@ export default function Matches () {
                 </YStack>
             </YStack>
             <XStack mt={"auto"} pt={20} gap={20} justify={"center"}>
+                {myTournaments.length > 0 &&
                 <Button
                     icon={<CalendarPlus size={20} />}
                     onPress={() => {
@@ -102,6 +112,7 @@ export default function Matches () {
                 >
                     Añadir
                 </Button>
+                }
             </XStack>
 
             <MatchModal 
@@ -110,6 +121,7 @@ export default function Matches () {
                 matchSelected={matchSelected}
                 mode={modalMatchMode}
                 setMatchSelected={setMatchSelected}
+                myTournaments={myTournaments}
             />
         </YStack>
     )

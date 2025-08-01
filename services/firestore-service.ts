@@ -1,3 +1,4 @@
+import { Match } from "@/interfaces/firestore/match";
 import { Team } from "@/interfaces/firestore/team";
 import { Tournament } from "@/interfaces/firestore/tournament";
 import { User } from "@/interfaces/user";
@@ -6,11 +7,13 @@ import { collection, CollectionReference, deleteDoc, doc, Firestore, getDoc, get
 export class FirestoreService {
     constructor(private firestore: Firestore) {}
 
+    /*************
+        USER
+    *************/
     async addUser (user: User) {
         try {
             const docUserRef = doc(this.firestore, "users", user.id);
             await setDoc(docUserRef, user);
-            console.log("Usuario creado");
         } catch (error) {
             console.log(error);
         }
@@ -26,6 +29,10 @@ export class FirestoreService {
             console.log(error);
         }
     }
+
+    /*************
+        TOURNAMENT
+    *************/
 
     async getTournaments (userId?: string) {
         try {
@@ -47,7 +54,6 @@ export class FirestoreService {
             const docTournamentRef = doc(collection(this.firestore, "tournaments"));
             newTournament.id = docTournamentRef.id;
             await setDoc(docTournamentRef, newTournament)
-            console.log("NewTournament ID: "+docTournamentRef.id);
         } catch (error) {
             console.log(error);
         }
@@ -75,6 +81,10 @@ export class FirestoreService {
         }
     }
 
+    /*************
+        TEAM
+    *************/
+
     async addTeam (newTeam: Team) {
         try {
             const docTeamRef = doc(collection(this.firestore, `tournaments/${newTeam.id_tournament}/teams`));
@@ -101,11 +111,7 @@ export class FirestoreService {
             const docTeamRef = doc(this.firestore, `tournaments/${updatedTeam.id_tournament}/teams/${updatedTeam.id}`);
             await updateDoc(docTeamRef, {...updatedTeam});
             const snapshot = await getDoc(doc(this.firestore, `tournaments/${updatedTeam.id_tournament}/teams/${updatedTeam.id}`))
-            if (snapshot.exists()) {
-                return snapshot.data() as Team
-            } else {
-                return undefined;
-            }
+            return snapshot.data() as Team
         } catch (error) {
             console.log(error);
             return undefined;
@@ -115,6 +121,64 @@ export class FirestoreService {
     async deleteTeam (idTournament: string, idTeam: string) {
         try  {
             await deleteDoc(doc(this.firestore, `tournaments/${idTournament}/teams/${idTeam}`));
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    /*************
+        MATCH
+    *************/
+
+    async getMatches () {
+        try {
+            const snapshot = await getDocs(collection(this.firestore, `matches`));
+            const matches = snapshot.docs.map((m) => m.data() as Match);
+            return matches
+        } catch (error) {
+            console.log(error);
+            return [];
+        }
+    }
+
+    async addMatch (newMatch: Match) {
+        try {
+            const docMatchRef = doc(collection(this.firestore, `matches`));
+            newMatch.id = docMatchRef.id;
+            await setDoc(docMatchRef, newMatch);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async updateMatch (updatedMatch: Match) {
+        try {
+            await updateDoc(doc(this.firestore, `matches/${updatedMatch.id}`), {...updatedMatch});
+            const snapshot = await getDoc(doc(this.firestore, `matches/${updatedMatch.id}`));
+            return snapshot.data() as Match;
+        } catch (error) {
+            console.log(error);
+            return undefined;
+        }
+    }
+
+    async solveMatch (idMatch: string, goalsFirstTeam: number, goalsSecondTeam: number) {
+        try {
+            const date = new Date();
+            await updateDoc(doc(this.firestore, `matches/${idMatch}`), {
+                goals_first_team: goalsFirstTeam,
+                goals_second_team: goalsSecondTeam,
+                executed: true,
+                executedAt: date.toLocaleDateString()
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async deleteMatch (idMatch: string) {
+        try {
+            await deleteDoc(doc(this.firestore, `matches/${idMatch}`));
         } catch (error) {
             console.log(error);
         }
