@@ -8,7 +8,7 @@ import { Button, Paragraph, Switch, ThemeName, XStack, YStack } from "tamagui";
 
 export default function MenuScreen () {
     const { theme, setTheme } = useContext(ThemesContext);
-    const { auth } = useContext(FirebaseContext);
+    const { auth, setMoney } = useContext(FirebaseContext);
     const router = useRouter();
 
     const [ dark, setDark ] = useState(theme.includes("dark") ? true : false);
@@ -16,6 +16,7 @@ export default function MenuScreen () {
     function logout () {
         console.log(router.canGoBack())
         signOut(auth);
+        setMoney(undefined);
         router.replace("/(auth)/login");
     }
 

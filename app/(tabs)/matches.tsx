@@ -12,14 +12,14 @@ import { Button, ScrollView, XStack, YStack } from "tamagui";
 
 export default function Matches () {
     const { firestore } = useContext(FirebaseContext);
-    const { matches, setMatches } = useContext(MatchContext);
+    const { matches, setMatches, matchSelected, setMatchSelected } = useContext(MatchContext);
 
     const [ myTournaments, setMyTournaments ] = useState<Tournament[]>([]);
 
     const [ viewMode, setViewMode ] = useState<"disputed" | "next">("disputed");
     const [ modalMatchVisible, setModalMatchVisible ] = useState(false);
     const [ modalMatchMode, setModalMatchMode ] = useState<"add" | "edit" | "solve">("add");
-    const [ matchSelected, setMatchSelected ] = useState<Match | undefined>();
+    // const [ matchSelected, setMatchSelected ] = useState<Match | undefined>();
 
     // Request's state
     const [ matchesIsLoading, setMatchesIsLoading ] = useState(false);

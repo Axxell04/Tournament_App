@@ -1,3 +1,4 @@
+import { Bet } from "@/interfaces/bet";
 import { Match } from "@/interfaces/match";
 import { Team } from "@/interfaces/team";
 import { Tournament } from "@/interfaces/tournament";
@@ -141,6 +142,17 @@ export class FirestoreService {
         }
     }
 
+    async getMatch (matchId: string) {
+        try {
+            const snapshot = await getDoc(doc(this.firestore, `matches`, matchId));
+            const match = snapshot.data() as Match;
+            return match;
+        } catch (error) {
+            console.log(error);
+            return undefined;
+        }
+    }
+
     async addMatch (newMatch: Match) {
         try {
             const docMatchRef = doc(collection(this.firestore, `matches`));
@@ -170,7 +182,23 @@ export class FirestoreService {
                 goals_second_team: goalsSecondTeam,
                 executed: true,
                 executedAt: date.toLocaleDateString()
-            })
+            });
+            const snapshotBets = await getDocs(query(collection(this.firestore, `bets`), where("id_match", "==", idMatch)));
+            if (snapshotBets.empty) { return }
+            const bets = snapshotBets.docs.map(d => d.data() as Bet);
+            for (const bet of bets) {
+                let won: boolean;
+                if (bet.prediction === "1 > 2" && goalsFirstTeam > goalsSecondTeam) {
+                    won = true;
+                } else if (bet.prediction === "1 < 2" && goalsFirstTeam < goalsSecondTeam) {
+                    won = true;
+                } else if (bet.prediction === "1 === 2" && goalsFirstTeam === goalsSecondTeam) {
+                    won = true;
+                } else {
+                    won = false;
+                }
+                await this.solveBet(bet, won);
+            }
         } catch (error) {
             console.log(error);
         }
@@ -179,6 +207,61 @@ export class FirestoreService {
     async deleteMatch (idMatch: string) {
         try {
             await deleteDoc(doc(this.firestore, `matches/${idMatch}`));
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    ////////////////
+    /// BET   
+    ////////////////
+
+    async getBets (userId: string) {
+        try {
+            const snapshot = await getDocs(query(collection(this.firestore, `bets/`), where("id_user", "==", userId)));
+            const bets = snapshot.docs.map((b) => b.data() as Bet);
+            return bets;
+        } catch (error) {
+            console.log(error);
+            return [];
+        }
+    }
+
+    async addBet (newBet: Bet, userId: string) {
+        try {
+            const docBetRef = doc(collection(this.firestore, `bets`));
+            newBet.id = docBetRef.id;
+            await setDoc(docBetRef, newBet);
+            const snapshotUser = await getDoc(doc(this.firestore, `users/${userId}`));
+            const user = snapshotUser.data() as User;
+            await updateDoc(doc(this.firestore, `users/${userId}`), { money: user.money - newBet.value });
+            return true;
+        } catch (error) {
+            console.log(error);
+            return false;
+        }
+    }
+
+    async updateBet (updatedBet: Bet) {
+        try {
+            await updateDoc(doc(this.firestore, `bet/${updatedBet.id}`), {...updatedBet});
+            const snapshot = await getDoc(doc(this.firestore, `bet/${updatedBet.id}`));
+            return snapshot.data() as Bet;
+        } catch (error) {
+            console.log(error);
+            return undefined;
+        }
+    }
+
+    async solveBet (bet: Bet, won: boolean) {
+        try {
+            await updateDoc(doc(this.firestore, `bets`, bet.id as string), {won: won});
+            if (won) {                
+                const snapshotUser = await getDoc(doc(this.firestore, `users`, bet.id_user));
+                const user = snapshotUser.data() as User;
+                const newMoney = user.money + (bet.value * 2);
+                await updateDoc(doc(this.firestore, `users/${bet.id_user}`), { money: newMoney });
+            } 
         } catch (error) {
             console.log(error);
         }

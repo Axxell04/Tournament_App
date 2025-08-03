@@ -1,7 +1,8 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
-import { FirestoreService } from "@/services/firestore-service";
+import { User } from "@/interfaces/user";
 import { CircleUserRound, DollarSign, Dribbble, Home, Menu, Trophy } from "@tamagui/lucide-icons";
 import { Stack, useRouter } from "expo-router";
+import { doc, onSnapshot } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import { Button, ButtonProps, Paragraph, SizableText, Tabs, XStack } from "tamagui";
 import Index from ".";
@@ -11,9 +12,8 @@ import Tournaments from "./tournaments";
 // import { Tabs } from "expo-router";
 
 export default function TabLayout () {
-    const { firestore, auth } = useContext(FirebaseContext);
+    const { firestore, auth, money, setMoney } = useContext(FirebaseContext);
     const [ usernameToShow, setUsernameToShow ] = useState("");
-    const [ moneyToShow, setMoneyToShow ] = useState<number | undefined>();
 
     const router = useRouter();
     
@@ -23,21 +23,25 @@ export default function TabLayout () {
     }
     
     useEffect(() => {
-        const firestoreService = new FirestoreService(firestore);
-        const getMoney = async () => {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) { return };
-            setMoneyToShow(await firestoreService.getMoney(auth.currentUser.uid));
-        }
-
         if (!auth.currentUser) {
             router.replace("/(auth)/login");        
         } else if (auth.currentUser.isAnonymous) {
             setUsernameToShow("Invitado");
         } else {
             setUsernameToShow(auth.currentUser.displayName as string);
-            getMoney();
         }
-    }, [auth, router, firestore, moneyToShow])
+
+        // Listener para actualizaciones en tiempo real
+        const unsubcrite = onSnapshot(doc(firestore, "users", auth.currentUser?.uid as string), (docSnap) => {
+            if (docSnap.exists()) {
+                const user = docSnap.data() as User;
+                setMoney(user.money);
+            }
+        })
+
+        return () => unsubcrite();
+
+    }, [auth, router, firestore, setMoney])
 
     return (
         <Tabs flex={1} flexDirection="column" bg={"$background"}
@@ -53,10 +57,10 @@ export default function TabLayout () {
                         </Paragraph>                    
                     </XStack>
                     {(auth.currentUser && !auth.currentUser.isAnonymous) && 
-                        <XStack items={"center"} gap={5}>
+                        <XStack items={"center"} gap={5} onPress={() => router.push("/(bets)/list_bets")}>
                             <DollarSign size={23} opacity={0.9} />
                             <Paragraph fontSize={18} opacity={0.9}>
-                                {typeof moneyToShow !== "undefined" ? moneyToShow : "-----"}
+                                {typeof money !== "undefined" ? money : "-----"}
                             </Paragraph>                    
                         </XStack>
                     }

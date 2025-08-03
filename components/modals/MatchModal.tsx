@@ -253,7 +253,7 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                                 Torneos
                                             </Select.Label>                                                                                        
                                             {myTournaments.map((tournament, index) => (
-                                                <Select.Item index={myTournaments.indexOf(tournament)+2*5} key={tournament.id+tournament.ownerId+tournament.name}
+                                                <Select.Item index={index+2*5} key={tournament.id+tournament.ownerId+tournament.name}
                                                     value={tournament.id as string} 
                                                     bg={"$backgroundHover"} 
                                                     borderBottomEndRadius={index === myTournaments.length-1 ? "$2" : "$0"} 
@@ -299,7 +299,7 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                                 Equipos
                                             </Select.Label>                                                                                        
                                             {teams.map((team, index) => (
-                                                <Select.Item index={teams.indexOf(team)+2*5} key={team.id+team.dt+team.name}
+                                                <Select.Item index={index+2*5} key={team.id+team.dt+team.name}
                                                     value={team.id as string} 
                                                     bg={"$backgroundHover"} 
                                                     borderBottomEndRadius={index === teams.length-1 ? "$2" : "$0"} 
@@ -346,7 +346,7 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                                 Equipos
                                             </Select.Label>                                                                                        
                                             {teams.map((team, index) => (
-                                                <Select.Item index={teams.indexOf(team)+2*5} key={team.id+team.dt+team.name}
+                                                <Select.Item index={index+2*5} key={team.id+team.dt+team.name}
                                                     value={team.id as string} 
                                                     bg={"$backgroundHover"} 
                                                     borderBottomEndRadius={index === teams.length-1 ? "$2" : "$0"} 

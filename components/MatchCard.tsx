@@ -1,7 +1,8 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { Match } from "@/interfaces/match";
 import { Tournament } from "@/interfaces/tournament";
-import { CalendarCheck2, CalendarCog } from "@tamagui/lucide-icons";
+import { CalendarCheck2, CalendarCog, DollarSign } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import { Button, Paragraph, XStack, YStack } from "tamagui";
 
@@ -16,9 +17,7 @@ interface Props {
 
 export default function MatchCard ({ match, matchSelected, selectThisMatch, setModalMatchMode, toggleModalMatchVisible, myTournaments }: Props) {
     const { auth, firestore } = useContext(FirebaseContext);
-    // const [ tournament, setTournament ] = useState<Tournament | undefined | null>();
-    // const [ firstTeam, setFirstTeam ] = useState<Team | undefined | null>();
-    // const [ secondTeam, setSecondTeam ] = useState<Team | undefined | null>();
+    const router = useRouter();
 
     const [ isSelected, setIsSelected ] = useState(false);
     const [ isMyTournament, setIsMyTournament ] = useState(false);
@@ -112,6 +111,17 @@ export default function MatchCard ({ match, matchSelected, selectThisMatch, setM
                         Disputar
                     </Button>
                 </XStack>                
+                }
+                {(isSelected && !isMyTournament && !match.executed) &&
+                <XStack flex={1}>
+                    <Button grow={1}
+                        icon={<DollarSign size={20} />}
+                        iconAfter={<DollarSign size={20} />}
+                        onPress={() => router.push("/(bets)/make_bet")}
+                    >
+                        Realizar Apuesta
+                    </Button>
+                </XStack>
                 }
             </YStack>
 
