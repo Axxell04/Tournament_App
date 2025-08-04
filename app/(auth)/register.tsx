@@ -18,6 +18,8 @@ export default function LoginScreen() {
 	// Request's State
 	const [loading, setLoading] = useState(false);
 
+	const router = useRouter();
+
 	async function handleCreateUser() {
 		if (!username) {
 			ToastAndroid.show("Debe ingresar un usuario", ToastAndroid.LONG);
@@ -42,7 +44,6 @@ export default function LoginScreen() {
 				displayName: username.trim(),
 			});
 
-			console.log(userCredential);
 			const user: User = {
 				id: userCredential.user.uid,
 				email: userCredential.user.email as string,
@@ -79,9 +80,7 @@ export default function LoginScreen() {
 		} finally {
 			setLoading(false);
 		}
-	}
-
-	const router = useRouter();
+	}	
 
 	return (
 		<>

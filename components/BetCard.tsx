@@ -17,9 +17,7 @@ export default function BetCard ({ bet }: Props) {
     useEffect(() => {
         const loadMatch = async () => {
             const fsService = new FirestoreService(firestore);
-            console.log(444);
             const resMatch = await fsService.getMatch(bet.id_match);
-            console.log(resMatch);
             setMatch(resMatch);
         };
         loadMatch();

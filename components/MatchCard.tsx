@@ -88,7 +88,7 @@ export default function MatchCard ({ match, matchSelected, selectThisMatch, setM
                         {match.plannedAt ?? "DD-MM-AA"}
                     </Paragraph>                    
                 </YStack>
-                {(isSelected && isMyTournament && !match.executed) && 
+                {(isSelected && isMyTournament && !match.executed && !auth.currentUser?.isAnonymous) && 
                 <XStack gap={10} mt={5}>
                     <Button 
                         icon={<CalendarCog size={20} />}
@@ -112,7 +112,7 @@ export default function MatchCard ({ match, matchSelected, selectThisMatch, setM
                     </Button>
                 </XStack>                
                 }
-                {(isSelected && !isMyTournament && !match.executed) &&
+                {(isSelected && !isMyTournament && !match.executed && !auth.currentUser?.isAnonymous) &&
                 <XStack flex={1}>
                     <Button grow={1}
                         icon={<DollarSign size={20} />}

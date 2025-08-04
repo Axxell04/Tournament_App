@@ -1,5 +1,4 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
-import { UserContext } from "@/context-providers/UserProvider";
 import { Stack, useRouter } from "expo-router";
 import { FirebaseError } from "firebase/app";
 import {
@@ -11,13 +10,14 @@ import { ToastAndroid } from "react-native";
 import { Button, H4, Input, Label, Spinner, YStack } from "tamagui";
 export default function LoginScreen() {
     const { auth } = useContext(FirebaseContext);
-    const { setUser } = useContext(UserContext);
 
     const [ email, setEmail ] = useState("");
     const [ password, setPassword ] = useState("");
 
     // Request's state
     const [ loading, setLoading ] = useState(false);
+
+    const router = useRouter();
 
   async function handleSignInUser() {
     if (!email) { 
@@ -66,8 +66,8 @@ export default function LoginScreen() {
   async function handleSignInAsAnonymous () {
     try {
       setLoading(true);
-      const userCredential = await signInAnonymously(auth);
-      setUser(userCredential.user);
+      await signInAnonymously(auth);
+      // setUser(userCredential.user);
       clearInputs();
       router.replace("/(tabs)");
     } catch (error) {
@@ -85,7 +85,7 @@ export default function LoginScreen() {
     setPassword("");
   }
 
-  const router = useRouter();
+  
 
   return (
     <>

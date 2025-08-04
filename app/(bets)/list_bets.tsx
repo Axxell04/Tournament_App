@@ -2,45 +2,39 @@ import BetCard from "@/components/BetCard";
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { Bet } from "@/interfaces/bet";
 import { ArrowLeft, CircleUserRound, DollarSign } from "@tamagui/lucide-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Button, Paragraph, ScrollView, Spinner, XStack, YStack } from "tamagui";
 
 
 export default function ListBets () {
     const { auth, money, firestore } = useContext(FirebaseContext);
-    const [ loading, setLoading ] = useState(false);
+    const [ loading, setLoading ] = useState(true );
     const [ bets, setBets ] = useState<Bet[]>([]);
     const router = useRouter();
 
     useEffect(() => {
-        // const loadBets = async () => {
-        //     if (!auth.currentUser) { return };
-        //     const fsService = new FirestoreService(firestore);
-        //     const bets = await fsService.getBets(auth.currentUser.uid);
-        //     console.log(bets);
-        //     setBets(bets);
-        // };
-        // loadBets();
         const q = query(collection(firestore, `bets`), where("id_user", "==", auth.currentUser?.uid));
 
         const unsub = onSnapshot(q, (docSnap) => {
-            console.log(docSnap.docs);
+            // console.log(docSnap.docs);
             setBets(docSnap.docs.map(b => b.data() as Bet));
+            setLoading(false);
         })
 
         return () => unsub();
 
     }, [auth, firestore]);
 
+    useFocusEffect(
+        useCallback(() => {
+            setLoading(true);
+        }, [])
+    )
+
     return (
         <YStack flex={1} bg={"$background"}>
-            {loading &&
-            <YStack items={"center"}>
-                <Spinner position="absolute" t={5} size="large" color={"$colorFocus"} />
-            </YStack>
-            }
             <XStack py={5} px={10}>                
                 <Button
                     icon={<ArrowLeft size={25} />}
@@ -72,11 +66,18 @@ export default function ListBets () {
                     <Paragraph color={"$color08"}>
                         Historial de apuestas
                     </Paragraph>
+                    {loading 
+                    ?
+                    <YStack items={"center"}>
+                        <Spinner position="absolute" t={5} size="large" color={"$colorFocus"} />
+                    </YStack>
+                    :
                     <ScrollView>
                         <YStack gap={10}>
                             {bets.map((bet, index) => <BetCard bet={bet} key={bet.id} /> )}
                         </YStack>
                     </ScrollView>
+                    }
                 </YStack>
             </YStack>
         </YStack>

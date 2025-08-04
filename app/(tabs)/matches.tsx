@@ -7,7 +7,8 @@ import { Match } from "@/interfaces/match";
 import { Tournament } from "@/interfaces/tournament";
 import { FirestoreService } from "@/services/firestore-service";
 import { CalendarPlus } from "@tamagui/lucide-icons";
-import { useContext, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Button, ScrollView, XStack, YStack } from "tamagui";
 
 export default function Matches () {
@@ -43,13 +44,19 @@ export default function Matches () {
     }
 
     useEffect(() => {
-        const loadMatches = async () => {
-            const fsService = new FirestoreService(firestore);
-            setMatches(await fsService.getMatches());
-            setMyTournaments(await fsService.getTournaments(auth.currentUser?.uid));
-        };
-        loadMatches();
+        
     }, [viewMode, setMatches, firestore])
+
+    useFocusEffect(
+        useCallback(() => {
+            const loadMatches = async () => {
+                const fsService = new FirestoreService(firestore);
+                setMatches(await fsService.getMatches());
+                setMyTournaments(await fsService.getTournaments(auth.currentUser?.uid));
+            };
+        loadMatches();
+        }, [firestore, setMatches])
+    )
 
     return (
         <YStack bg={"$background"} flex={1} p={20}>
@@ -71,7 +78,7 @@ export default function Matches () {
                 <YStack p={10} pt={5} flex={1}>
                     <ScrollView bg={"$borderColorFocus"} rounded={"$6"}>
                         <YStack flex={1} grow={1}  gap={10} p={5}>
-                            {matches.map((match) => {
+                            {matches && matches.map((match) => {
                                 if (viewMode === "next" && !match.executed) {
                                     return (
                                         <MatchCard match={match}

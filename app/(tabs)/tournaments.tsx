@@ -147,7 +147,7 @@ export default function Tournaments () {
                             Mís torneos
                         </Button>
                     </XStack>
-                    {(tournaments.length === 0 && !tournamentsIsLoading) &&
+                    {(tournaments && tournaments.length === 0 && !tournamentsIsLoading) &&
                         <YStack items={"center"} justify={"center"} py={20}>
                                 <Paragraph opacity={0.7} text={"center"} >
                                     No hay torneos registrados
@@ -165,7 +165,7 @@ export default function Tournaments () {
                     horizontal
                     >   
                         <XStack gap={"$2"}>
-                            {tournaments.map((tournament) => <TournamentCard tournament={tournament} selectThisTournament={selectThisTournament} tournamentSelected={tournamentSelected} key={tournament.id+tournament.name+tournament.ownerId} />)}
+                            {tournaments && tournaments.map((tournament) => <TournamentCard tournament={tournament} selectThisTournament={selectThisTournament} tournamentSelected={tournamentSelected} key={tournament.id+tournament.name+tournament.ownerId} />)}
                         </XStack>
                     </ScrollView>
                     }
@@ -216,7 +216,7 @@ export default function Tournaments () {
                             :
                             <YStack p={5} gap={5} flexWrap="wrap" flexDirection="row" justify={"center"} 
                             >
-                                {teams.map((team) => <TeamCard team={team} isMyTournament={isMyTournament} selectThisTeam={selectThisTeam} teamSelected={teamSelected} setModalTeamMode={setModalTeamMode} toggleModal={toggleTeamModal} key={team.id+team.name+team.dt} /> )}
+                                {teams && teams.map((team) => <TeamCard team={team} isMyTournament={isMyTournament} selectThisTeam={selectThisTeam} teamSelected={teamSelected} setModalTeamMode={setModalTeamMode} toggleModal={toggleTeamModal} key={team.id+team.name+team.dt} /> )}
                                 {(!auth.currentUser?.isAnonymous && auth.currentUser?.uid === tournamentSelected.ownerId && !teamsIsLoading) &&
                                 <Button 
                                     icon={<Plus size={20} />}

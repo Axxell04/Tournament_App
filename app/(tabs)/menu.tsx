@@ -1,26 +1,42 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
+import { MatchContext } from "@/context-providers/MatchesProvider";
 import { ThemesContext } from "@/context-providers/themes/ThemesProvider";
-import { LogIn, LogOut } from "@tamagui/lucide-icons";
+import { DollarSign, LogIn, LogOut } from "@tamagui/lucide-icons";
 import { useRouter, } from "expo-router";
-import { signOut } from "firebase/auth";
 import { useContext, useEffect, useState } from "react";
 import { Button, Paragraph, Switch, ThemeName, XStack, YStack } from "tamagui";
 
 export default function MenuScreen () {
     const { theme, setTheme } = useContext(ThemesContext);
     const { auth, setMoney } = useContext(FirebaseContext);
+    const { setMatchSelected } = useContext(MatchContext);
     const router = useRouter();
 
     const [ dark, setDark ] = useState(theme.includes("dark") ? true : false);
 
-    function logout () {
-        console.log(router.canGoBack())
-        signOut(auth);
+    async function logout () {
+        // await signOut(auth);
+        setMatchSelected(undefined);
         setMoney(undefined);
         router.replace("/(auth)/login");
     }
 
     useEffect(() => {
+
+        const THEME_NAME_MAP: Record<ThemeName, true> = {
+            dark_yellow: true, light: true, dark: true, light_yellow: true,
+            light_green: true, light_blue: true, light_red: true,
+            dark_green: true, dark_blue: true, dark_red: true,
+            light_accent: true, dark_accent: true, light_black: true,
+            light_white: true, dark_black: true, dark_white: true,
+            yellow: true, green: true, blue: true, red: true,
+            accent: true, black: true, white: true
+        };
+
+        function checkTheme (value: string): value is ThemeName {
+            return THEME_NAME_MAP.hasOwnProperty(value);
+        }
+
         if (dark) {
             const newTheme = theme.replace("light", "dark")
             if (checkTheme(newTheme)) {
@@ -37,26 +53,14 @@ export default function MenuScreen () {
     }, [theme, dark, setTheme])
 
 
-    const THEME_NAME_MAP: Record<ThemeName, true> = {
-        dark_yellow: true, light: true, dark: true, light_yellow: true,
-        light_green: true, light_blue: true, light_red: true,
-        dark_green: true, dark_blue: true, dark_red: true,
-        light_accent: true, dark_accent: true, light_black: true,
-        light_white: true, dark_black: true, dark_white: true,
-        yellow: true, green: true, blue: true, red: true,
-        accent: true, black: true, white: true
-    };
-
-    function checkTheme (value: string): value is ThemeName {
-        return THEME_NAME_MAP.hasOwnProperty(value);
-    }
+    
 
     return (
         <YStack flex={1} p={5}>
-            <YStack flex={1} items={"center"}>
+            <YStack flex={1} items={"center"} gap={30}>
                 <YStack>
                     <YStack items={"center"} gap={5}>
-                        <Paragraph>
+                        <Paragraph color={"$color08"}>
                             Temas
                         </Paragraph>
                         <XStack gap={10}>
@@ -94,9 +98,24 @@ export default function MenuScreen () {
                         </XStack>
                     </YStack>
                 </YStack>
-                <Button onPress={() => router.push("/(firebase)/user")}>
+                {/* <Button onPress={() => router.push("/(firebase)/user")}>
                     Ir al firebase screen
-                </Button>
+                </Button> */}
+                {!auth.currentUser?.isAnonymous &&
+                <YStack flex={1} items={"center"} gap={10}>
+                    <Paragraph color={"$color08"}>
+                        Opciones de Usuario
+                    </Paragraph>
+                    <YStack gap={10}>
+                        <Button
+                            icon={<DollarSign size={20} color={"$color"} />}
+                            onPress={() => router.push("/(bets)/list_bets")}
+                        >
+                            Ver balance
+                        </Button>
+                    </YStack>
+                </YStack>
+                }
                 {auth.currentUser?.isAnonymous 
                 ? 
                 <Button 

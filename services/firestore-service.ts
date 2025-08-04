@@ -3,7 +3,7 @@ import { Match } from "@/interfaces/match";
 import { Team } from "@/interfaces/team";
 import { Tournament } from "@/interfaces/tournament";
 import { User } from "@/interfaces/user";
-import { collection, CollectionReference, deleteDoc, doc, Firestore, getDoc, getDocs, Query, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { collection, CollectionReference, deleteDoc, doc, Firestore, getDoc, getDocs, orderBy, Query, query, setDoc, updateDoc, where } from "firebase/firestore";
 
 export class FirestoreService {
     constructor(private firestore: Firestore) {}
@@ -62,8 +62,8 @@ export class FirestoreService {
 
     async updateTournament (updatedTournament: Tournament) {
         try  {
-            await updateDoc(doc(this.firestore, `tournaments/${updatedTournament.id}`), {...updatedTournament})
-            const snapshot = await getDoc(doc(this.firestore, `tournaments/${updatedTournament.id}`));
+            await updateDoc(doc(this.firestore, `tournaments`, updatedTournament.id as string), {...updatedTournament});
+            const snapshot = await getDoc(doc(this.firestore, `tournaments`, updatedTournament.id as string));
             return snapshot.data() as Tournament;
         } catch (error) {
             console.log(error);
@@ -76,7 +76,7 @@ export class FirestoreService {
             const snapshot = await getDocs(collection(this.firestore, `tournaments/${idTournament}/teams`));
             const deletePromises = snapshot.docs.map((team) => deleteDoc(team.ref));
             await Promise.all(deletePromises);
-            await deleteDoc(doc(this.firestore, `tournaments/${idTournament}`));
+            await deleteDoc(doc(this.firestore, `tournaments`, idTournament));
         } catch (error) {
             console.log(error);
         }
@@ -133,7 +133,8 @@ export class FirestoreService {
 
     async getMatches () {
         try {
-            const snapshot = await getDocs(collection(this.firestore, `matches`));
+            const q = query(collection(this.firestore, `matches`), orderBy("plannedAt"));
+            const snapshot = await getDocs(q);
             const matches = snapshot.docs.map((m) => m.data() as Match);
             return matches
         } catch (error) {
@@ -165,8 +166,8 @@ export class FirestoreService {
 
     async updateMatch (updatedMatch: Match) {
         try {
-            await updateDoc(doc(this.firestore, `matches/${updatedMatch.id}`), {...updatedMatch});
-            const snapshot = await getDoc(doc(this.firestore, `matches/${updatedMatch.id}`));
+            await updateDoc(doc(this.firestore, `matches`, updatedMatch.id as string), {...updatedMatch});
+            const snapshot = await getDoc(doc(this.firestore, `matches`, updatedMatch.id as string));
             return snapshot.data() as Match;
         } catch (error) {
             console.log(error);
@@ -177,7 +178,7 @@ export class FirestoreService {
     async solveMatch (idMatch: string, goalsFirstTeam: number, goalsSecondTeam: number) {
         try {
             const date = new Date();
-            await updateDoc(doc(this.firestore, `matches/${idMatch}`), {
+            await updateDoc(doc(this.firestore, `matches`, idMatch), {
                 goals_first_team: goalsFirstTeam,
                 goals_second_team: goalsSecondTeam,
                 executed: true,
@@ -206,7 +207,7 @@ export class FirestoreService {
 
     async deleteMatch (idMatch: string) {
         try {
-            await deleteDoc(doc(this.firestore, `matches/${idMatch}`));
+            await deleteDoc(doc(this.firestore, `matches`, idMatch));
         } catch (error) {
             console.log(error);
         }
@@ -218,7 +219,7 @@ export class FirestoreService {
 
     async getBets (userId: string) {
         try {
-            const snapshot = await getDocs(query(collection(this.firestore, `bets/`), where("id_user", "==", userId)));
+            const snapshot = await getDocs(query(collection(this.firestore, `bets`), where("id_user", "==", userId)));
             const bets = snapshot.docs.map((b) => b.data() as Bet);
             return bets;
         } catch (error) {
@@ -232,9 +233,9 @@ export class FirestoreService {
             const docBetRef = doc(collection(this.firestore, `bets`));
             newBet.id = docBetRef.id;
             await setDoc(docBetRef, newBet);
-            const snapshotUser = await getDoc(doc(this.firestore, `users/${userId}`));
+            const snapshotUser = await getDoc(doc(this.firestore, `users`, userId));
             const user = snapshotUser.data() as User;
-            await updateDoc(doc(this.firestore, `users/${userId}`), { money: user.money - newBet.value });
+            await updateDoc(doc(this.firestore, `users`, userId), { money: user.money - newBet.value });
             return true;
         } catch (error) {
             console.log(error);
@@ -244,8 +245,8 @@ export class FirestoreService {
 
     async updateBet (updatedBet: Bet) {
         try {
-            await updateDoc(doc(this.firestore, `bet/${updatedBet.id}`), {...updatedBet});
-            const snapshot = await getDoc(doc(this.firestore, `bet/${updatedBet.id}`));
+            await updateDoc(doc(this.firestore, `bets`, updatedBet.id as string), {...updatedBet});
+            const snapshot = await getDoc(doc(this.firestore, `bets`, updatedBet.id as string));
             return snapshot.data() as Bet;
         } catch (error) {
             console.log(error);
@@ -260,7 +261,7 @@ export class FirestoreService {
                 const snapshotUser = await getDoc(doc(this.firestore, `users`, bet.id_user));
                 const user = snapshotUser.data() as User;
                 const newMoney = user.money + (bet.value * 2);
-                await updateDoc(doc(this.firestore, `users/${bet.id_user}`), { money: newMoney });
+                await updateDoc(doc(this.firestore, `users`, bet.id_user), { money: newMoney });
             } 
         } catch (error) {
             console.log(error);

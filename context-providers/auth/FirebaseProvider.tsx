@@ -1,12 +1,15 @@
+import { User } from "@/interfaces/user";
 import { FirebaseApp } from "firebase/app";
-import { Auth, onAuthStateChanged } from "firebase/auth";
+import { Auth } from "firebase/auth";
 import { Firestore } from "firebase/firestore";
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useState } from "react";
 import { app, auth, firestore } from "../../firebase-config";
 
 interface FirebaseContextValue {
     app: FirebaseApp
     auth: Auth
+    user: User | undefined
+    setUser: React.Dispatch<React.SetStateAction<User | undefined>>
     firestore: Firestore
     money: number | undefined
     setMoney: React.Dispatch<React.SetStateAction<number | undefined>>
@@ -15,6 +18,8 @@ interface FirebaseContextValue {
 export const FirebaseContext = createContext<FirebaseContextValue>({
     app: app,
     auth: auth,
+    user: undefined,
+    setUser: () => {},
     firestore: firestore,
     money: undefined,
     setMoney: () => {}
@@ -23,25 +28,21 @@ export const FirebaseContext = createContext<FirebaseContextValue>({
 export default function FirebaseProvider ({ children }: { children: React.ReactNode}) {
     const [ appState ] = useState(app);
     const [ authState ] = useState(auth);
+    const [ userState, setUserState ] = useState<User | undefined>();
     const [ firestoreState ] = useState(firestore);
 
     const [ moneyState, setMoneyState ] = useState<number | undefined>();
-
-    useEffect(() => {
-        console.log('auth:', auth);
-
-        const unsub = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                console.log("Usuario autenticado: "+user.displayName);
-            } else {
-                console.log("Usuario no autenticado");
-            }
-        })
-        return unsub();
-    }, [])
     
     return (
-        <FirebaseContext.Provider value={{app: appState, auth: authState, firestore: firestoreState, money: moneyState, setMoney: setMoneyState }}>
+        <FirebaseContext.Provider value={{
+            app: appState, 
+            auth: authState, 
+            firestore: firestoreState, 
+            money: moneyState, 
+            setMoney: setMoneyState,
+            user: userState,
+            setUser: setUserState
+            }}>
             { children }
         </FirebaseContext.Provider>
     )

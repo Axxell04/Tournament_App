@@ -1,9 +1,13 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
+import { MatchContext } from "@/context-providers/MatchesProvider";
+import { TournametContext } from "@/context-providers/TournamentsProvider";
+import { Match } from "@/interfaces/match";
+import { Tournament } from "@/interfaces/tournament";
 import { User } from "@/interfaces/user";
 import { CircleUserRound, DollarSign, Dribbble, Home, Menu, Trophy } from "@tamagui/lucide-icons";
-import { Stack, useRouter } from "expo-router";
-import { doc, onSnapshot } from "firebase/firestore";
-import React, { useContext, useEffect, useState } from "react";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { collection, doc, onSnapshot, orderBy, query } from "firebase/firestore";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Button, ButtonProps, Paragraph, SizableText, Tabs, XStack } from "tamagui";
 import Index from ".";
 import Matches from "./matches";
@@ -13,7 +17,13 @@ import Tournaments from "./tournaments";
 
 export default function TabLayout () {
     const { firestore, auth, money, setMoney } = useContext(FirebaseContext);
+    const { setMatches } = useContext(MatchContext);
+    const { setTournaments } = useContext(TournametContext);
     const [ usernameToShow, setUsernameToShow ] = useState("");
+
+    // const [ unsubSnapUser, setUnsubSnapUser ] = useState<Unsubscribe | undefined>();
+    // const [ unsubSnapMatches, setUnsubSnapMatches ] = useState<Unsubscribe | undefined>();
+    // const [ unsubSnapTournaments, setUnsubSnapTournaments ] = useState<Unsubscribe | undefined>();
 
     const router = useRouter();
     
@@ -23,25 +33,87 @@ export default function TabLayout () {
     }
     
     useEffect(() => {
-        if (!auth.currentUser) {
+        if (!auth.currentUser && router) {
             router.replace("/(auth)/login");        
-        } else if (auth.currentUser.isAnonymous) {
+        } else if (auth.currentUser?.isAnonymous) {
             setUsernameToShow("Invitado");
         } else {
-            setUsernameToShow(auth.currentUser.displayName as string);
+            setUsernameToShow(auth.currentUser?.displayName as string);
         }
 
-        // Listener para actualizaciones en tiempo real
-        const unsubcrite = onSnapshot(doc(firestore, "users", auth.currentUser?.uid as string), (docSnap) => {
-            if (docSnap.exists()) {
-                const user = docSnap.data() as User;
-                setMoney(user.money);
-            }
-        })
+    }, [auth, router, firestore])
 
-        return () => unsubcrite();
+    // useEffect(() => {
+    //     if (auth && router) {
 
-    }, [auth, router, firestore, setMoney])
+    //         const unsubscribeAuthChange = onAuthStateChanged(auth, (u) => {
+    //             if (u) {
+    //                 console.log("LogIn: "+u.displayName);
+    //                 // Listener para actualizaciones en tiempo real
+                    
+    //             } else {
+    //                 console.log("LogOut");
+    //             }
+    //         })
+    
+    //         const usUser = onSnapshot(doc(firestore, "users", auth.currentUser?.uid as string), (docSnap) => {
+    //             if (docSnap.exists()) {
+    //                 const user = docSnap.data() as User;
+    //                 setMoney(user.money);
+    //             }
+    //         })
+    //         const usMatches = onSnapshot(query(collection(firestore, "matches"), orderBy("plannedAt")), (docSnap) => {
+    //             setMatches(docSnap.docs.map((m) => m.data() as Match));
+    //         })
+    //         const usTournaments = onSnapshot(query(collection(firestore, "tournaments"), orderBy("ownerName")), (docSanp) => {
+    //             setTournaments(docSanp.docs.map((t) => t.data() as Tournament));
+    //         })
+            
+    //         return () => {            
+    //             unsubscribeAuthChange();
+    //             usUser();
+    //             usMatches();
+    //             usTournaments();
+    //             console.log("Limpiando listeners")
+    //         };
+    //     }
+
+    // }, [auth, firestore, setMoney, setMatches, setTournaments, router]);
+
+    useFocusEffect(
+        useCallback(() => {
+            // const unsubscribeAuthChange = onAuthStateChanged(auth, (u) => {
+            //     if (u) {
+            //         console.log("LogIn: "+u.displayName);
+            //         // Listener para actualizaciones en tiempo real
+                    
+            //     } else {
+            //         console.log("LogOut");
+            //     }
+            // })
+    
+            const usUser = onSnapshot(doc(firestore, "users", auth.currentUser?.uid as string), (docSnap) => {
+                if (docSnap.exists()) {
+                    const user = docSnap.data() as User;
+                    setMoney(user.money);
+                }
+            })
+            const usMatches = onSnapshot(query(collection(firestore, "matches"), orderBy("plannedAt")), (docSnap) => {
+                setMatches(docSnap.docs.map((m) => m.data() as Match));
+            })
+            const usTournaments = onSnapshot(query(collection(firestore, "tournaments"), orderBy("ownerName")), (docSanp) => {
+                setTournaments(docSanp.docs.map((t) => t.data() as Tournament));
+            })
+            
+            return () => {            
+                // unsubscribeAuthChange();
+                usUser();
+                usMatches();
+                usTournaments();
+                // console.log("Limpiando listeners")
+            };
+        }, [auth, firestore, setMoney, setMatches, setTournaments])
+    )
 
     return (
         <Tabs flex={1} flexDirection="column" bg={"$background"}

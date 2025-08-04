@@ -375,11 +375,11 @@ export default function MatchModal ({visible, toggleModal, mode="add", matchSele
                                 color={plannedAt ? "$color" : "$color06"}
                                 onPress={() => setShowDateTimePicker(true)}
                             >
-                                {plannedAt ? plannedAt : "DD-MM-AA"}
+                                {plannedAt ? plannedAt : "AA-MM-DD"}
                             </Button>
                             {showDateTimePicker &&
                             <DateTimePicker mode="date" value={new Date()} minimumDate={new Date()} timeZoneName="America/Guayaquil"
-                                onChange={(e, date) => {setPlannedAt(date?.toLocaleDateString() ?? ""); setShowDateTimePicker(false)}}
+                                onChange={(e, date) => {setPlannedAt(date?.toISOString().split("T")[0] ?? ""); setShowDateTimePicker(false)}}
                             />
                             }
                             </>
