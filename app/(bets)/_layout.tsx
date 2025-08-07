@@ -11,6 +11,10 @@ export default function BetsLayout () {
                 headerShown: false
             }}
             />
+            <Stack.Screen name="top_up_money" options={{
+                headerShown: false
+            }}
+            />
         </Stack>
     )
 }

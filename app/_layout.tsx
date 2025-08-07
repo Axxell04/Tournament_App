@@ -36,6 +36,9 @@ export default function RootLayout() {
                       <Stack.Screen name="(bets)" options={{
                         headerShown: false
                       }} />
+                      <Stack.Screen name="(admin)" options={{
+                        headerShown: false
+                      }} />
                     </Stack>
                   </SafeAreaView>
                   <StatusBar style="light" />

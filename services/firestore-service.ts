@@ -1,4 +1,5 @@
 import { Bet } from "@/interfaces/bet";
+import { Code } from "@/interfaces/code";
 import { Match } from "@/interfaces/match";
 import { Team } from "@/interfaces/team";
 import { Tournament } from "@/interfaces/tournament";
@@ -268,4 +269,47 @@ export class FirestoreService {
         }
     }
 
+    ////////////////
+    /// CODE
+    ////////////////
+
+    async addCode (newCode: Code) {
+        try {
+            const docCodeRef = doc(collection(this.firestore, `codes`));
+            newCode.id = docCodeRef.id;
+            await setDoc(docCodeRef, newCode);
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    async getCodes (userId: string) {
+        try {
+            const snapshot = await getDocs(query(collection(this.firestore, "codes"), where("ownerId", "==", userId)));
+            const codes = snapshot.docs.map((c) => c.data() as Code);
+            return codes;
+        } catch (error) {
+            console.log(error);
+            return [];
+        }
+    }
+
+    async claimCode (userId: string, codeText: string) {
+        try {
+            const snapshot = await getDocs(query(collection(this.firestore, `codes`), where("text", "==", codeText)));
+            if (!snapshot.empty) {
+                const code = snapshot.docs[0].data() as Code;
+                if (code.claimed) { return false }
+                const snapUser = await getDoc(doc(this.firestore, `users`, userId));
+                const user = snapUser.data() as User;
+                await updateDoc(doc(this.firestore, "users", userId), { money: user.money + code.value })
+                await updateDoc(doc(this.firestore, "codes", code.id as string), { claimed: true });
+                return true;
+            }
+            return null;
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    }
 }

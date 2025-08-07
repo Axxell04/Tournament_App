@@ -112,7 +112,7 @@ export default function BetsIndex () {
                         </Paragraph>
                     </XStack>
                 </YStack>
-                <YStack items={"center"}>
+                <YStack items={"center"} gap={10}>
                     <Paragraph>
                         Apuesta
                     </Paragraph>

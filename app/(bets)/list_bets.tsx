@@ -79,6 +79,13 @@ export default function ListBets () {
                     </ScrollView>
                     }
                 </YStack>
+                <YStack p={50}>
+                    <Button bg={"$colorFocus"} color={"$background"} pressStyle={{bg: "$color9", borderColor: "$color"}}
+                        onPress={() => router.push("/(bets)/top_up_money")}
+                    >
+                        Recargar dinero
+                    </Button>
+                </YStack>
             </YStack>
         </YStack>
     )

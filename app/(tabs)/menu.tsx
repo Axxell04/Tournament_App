@@ -1,7 +1,7 @@
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { MatchContext } from "@/context-providers/MatchesProvider";
 import { ThemesContext } from "@/context-providers/themes/ThemesProvider";
-import { DollarSign, LogIn, LogOut } from "@tamagui/lucide-icons";
+import { DollarSign, LogIn, LogOut, User2 } from "@tamagui/lucide-icons";
 import { useRouter, } from "expo-router";
 import { useContext, useEffect, useState } from "react";
 import { Button, Paragraph, Switch, ThemeName, XStack, YStack } from "tamagui";
@@ -101,21 +101,38 @@ export default function MenuScreen () {
                 {/* <Button onPress={() => router.push("/(firebase)/user")}>
                     Ir al firebase screen
                 </Button> */}
-                {!auth.currentUser?.isAnonymous &&
-                <YStack flex={1} items={"center"} gap={10}>
-                    <Paragraph color={"$color08"}>
-                        Opciones de Usuario
-                    </Paragraph>
-                    <YStack gap={10}>
-                        <Button
-                            icon={<DollarSign size={20} color={"$color"} />}
-                            onPress={() => router.push("/(bets)/list_bets")}
-                        >
-                            Ver balance
-                        </Button>
+                <YStack flex={1} items={"center"} gap={20}>                    
+                    {!auth.currentUser?.isAnonymous &&
+                    <YStack items={"center"} gap={10}>
+                        <Paragraph color={"$color08"}>
+                            Opciones de Usuario
+                        </Paragraph>
+                        <YStack gap={10}>
+                            <Button
+                                icon={<DollarSign size={20} color={"$color"} />}
+                                onPress={() => router.push("/(bets)/list_bets")}
+                            >
+                                Ver balance
+                            </Button>
+                        </YStack>
                     </YStack>
+                    }
+                    {!auth.currentUser?.isAnonymous &&
+                    <YStack items={"center"} gap={10}>
+                        <Paragraph color={"$color08"}>
+                            Opciones de Administrador
+                        </Paragraph>
+                        <YStack gap={10}>
+                            <Button
+                                icon={<User2 size={20} color={"$color"} />}
+                                onPress={() => router.push("/(admin)/admin_options")}
+                            >
+                                Panel adminstrador
+                            </Button>
+                        </YStack>
+                    </YStack>
+                    }
                 </YStack>
-                }
                 {auth.currentUser?.isAnonymous 
                 ? 
                 <Button 

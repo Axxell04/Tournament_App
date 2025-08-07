@@ -33,9 +33,15 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
-        }
+        }        
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-media-library",
+        {
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
