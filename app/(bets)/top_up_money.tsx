@@ -1,11 +1,12 @@
 import ReturnBar from "@/components/ReturnBar";
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
+import { CodeContext } from "@/context-providers/code/CodeProvider";
 import { User } from "@/interfaces/user";
 import { FirestoreService } from "@/services/firestore-service";
 import { Camera, CircleUserRound, ClipboardPaste, DollarSign, QrCode } from "@tamagui/lucide-icons";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from 'expo-image-picker';
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ToastAndroid } from "react-native";
@@ -15,12 +16,14 @@ import { Button, Input, Paragraph, Spinner, XStack, YStack } from "tamagui";
 
 export default function TopUpMoney () {
     const { auth, money, setMoney, firestore } = useContext(FirebaseContext);
+    const { codeScanned, setCodeScanned } = useContext(CodeContext);
+    const router = useRouter();
 
     const [ code, setCode ] = useState("");
     const [ loading, setLoading ] = useState(false);
     const [ scannerOptIsVisible, setScannerOptIsVisible ] = useState(false);
     const [ base64Image, setBase64Image ] = useState<string | undefined>();
-    const [ result, setResult ] = useState("");
+    // const [ result, setResult ] = useState("");
     const webViewRef = useRef<WebView>(null);
 
     function handleInputCode (text: string) {
@@ -54,17 +57,17 @@ export default function TopUpMoney () {
     const processCodeOfQR = useCallback(async () => {
         setLoading(true);
         const fsService = new FirestoreService(firestore);
-        const resProcess = await fsService.claimCode(auth.currentUser?.uid as string, result.trim());
+        const resProcess = await fsService.claimCode(auth.currentUser?.uid as string, codeScanned.trim());
         if (resProcess) {
             ToastAndroid.show("Código procesado con éxito", ToastAndroid.SHORT);
-            setResult("");
+            setCodeScanned("");
         } else if (resProcess === false) {
             ToastAndroid.show("Este código ya ha sido procesado", ToastAndroid.SHORT);
         } else {
             ToastAndroid.show("Error al procesar el código", ToastAndroid.SHORT);
         }
         setLoading(false);
-    }, [auth.currentUser?.uid, firestore, result]);
+    }, [auth.currentUser?.uid, firestore, codeScanned, setCodeScanned]);
 
     async function pickImage () {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -86,10 +89,11 @@ export default function TopUpMoney () {
     }
 
     useEffect(() => {
-        if (result) {
+        console.log("CodeScanned: "+codeScanned);
+        if (codeScanned) {
             processCodeOfQR()
         }
-    }, [processCodeOfQR, result])
+    }, [processCodeOfQR, codeScanned])
 
     useFocusEffect(
         useCallback(() => {
@@ -205,7 +209,8 @@ export default function TopUpMoney () {
                     <YStack bg={"$backgroundHover"} p={10} rounded={10} gap={10}>
                         <Button
                             icon={<Camera size={20} color={"$color"} />}
-                            >
+                            onPress={() => router.push("/(bets)/camera_scan")}
+                        >
                             Desde la cámara
                         </Button>
                         <Button
@@ -226,22 +231,14 @@ export default function TopUpMoney () {
                     originWhitelist={['*']}
                     source={{ html: htmlContent }}
                     onMessage={(event) => {
-                    setResult(event.nativeEvent.data);
+                    setCodeScanned(event.nativeEvent.data);
                     setBase64Image(undefined); // Limpiar después de escanear
                     }}
                     style={{ height: 0, width: 0 }}
                     // style={{backgroundColor: "white", width: 100, height: 100}}
                     
                 />
-                )}
-
-                {/* {result ? (
-                <Paragraph>
-                    Resultado: {result}
-                </Paragraph>
-                ) : base64Image ? (
-                <ActivityIndicator style={{ marginTop: 20 }} />
-                ) : null} */}
+                )}                
             </YStack>
         </YStack>
     )

@@ -8,7 +8,7 @@ import { Button, Paragraph, Switch, ThemeName, XStack, YStack } from "tamagui";
 
 export default function MenuScreen () {
     const { theme, setTheme } = useContext(ThemesContext);
-    const { auth, setMoney } = useContext(FirebaseContext);
+    const { auth, setMoney, user } = useContext(FirebaseContext);
     const { setMatchSelected } = useContext(MatchContext);
     const router = useRouter();
 
@@ -117,7 +117,7 @@ export default function MenuScreen () {
                         </YStack>
                     </YStack>
                     }
-                    {!auth.currentUser?.isAnonymous &&
+                    {(!auth.currentUser?.isAnonymous && user?.admin) &&
                     <YStack items={"center"} gap={10}>
                         <Paragraph color={"$color08"}>
                             Opciones de Administrador

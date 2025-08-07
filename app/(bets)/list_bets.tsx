@@ -1,36 +1,39 @@
 import BetCard from "@/components/BetCard";
 import { FirebaseContext } from "@/context-providers/auth/FirebaseProvider";
 import { Bet } from "@/interfaces/bet";
+import { FirestoreService } from "@/services/firestore-service";
 import { ArrowLeft, CircleUserRound, DollarSign } from "@tamagui/lucide-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { Button, Paragraph, ScrollView, Spinner, XStack, YStack } from "tamagui";
 
 
 export default function ListBets () {
     const { auth, money, firestore } = useContext(FirebaseContext);
-    const [ loading, setLoading ] = useState(true );
+    const [ loading, setLoading ] = useState(false);
     const [ bets, setBets ] = useState<Bet[]>([]);
     const router = useRouter();
 
-    useEffect(() => {
-        const q = query(collection(firestore, `bets`), where("id_user", "==", auth.currentUser?.uid));
-
-        const unsub = onSnapshot(q, (docSnap) => {
-            // console.log(docSnap.docs);
-            setBets(docSnap.docs.map(b => b.data() as Bet));
-            setLoading(false);
-        })
-
-        return () => unsub();
-
-    }, [auth, firestore]);
-
     useFocusEffect(
         useCallback(() => {
-            setLoading(true);
-        }, [])
+            const loadBets = async () => {
+                setLoading(true);
+                const fsService = new FirestoreService(firestore);
+                setBets(await fsService.getBets(auth.currentUser?.uid as string));
+                setLoading(false);
+            }
+            loadBets();
+            const q = query(collection(firestore, `bets`), where("id_user", "==", auth.currentUser?.uid));
+
+            const unsub = onSnapshot(q, (docSnap) => {
+                // console.log(docSnap.docs);
+                setBets(docSnap.docs.map(b => b.data() as Bet));
+            })
+
+            return () => unsub();
+
+        }, [auth.currentUser, firestore])
     )
 
     return (

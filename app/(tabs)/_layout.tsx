@@ -16,7 +16,7 @@ import Tournaments from "./tournaments";
 // import { Tabs } from "expo-router";
 
 export default function TabLayout () {
-    const { firestore, auth, money, setMoney } = useContext(FirebaseContext);
+    const { firestore, auth, money, setMoney, setUser } = useContext(FirebaseContext);
     const { setMatches } = useContext(MatchContext);
     const { setTournaments } = useContext(TournametContext);
     const [ usernameToShow, setUsernameToShow ] = useState("");
@@ -43,59 +43,14 @@ export default function TabLayout () {
 
     }, [auth, router, firestore])
 
-    // useEffect(() => {
-    //     if (auth && router) {
-
-    //         const unsubscribeAuthChange = onAuthStateChanged(auth, (u) => {
-    //             if (u) {
-    //                 console.log("LogIn: "+u.displayName);
-    //                 // Listener para actualizaciones en tiempo real
-                    
-    //             } else {
-    //                 console.log("LogOut");
-    //             }
-    //         })
-    
-    //         const usUser = onSnapshot(doc(firestore, "users", auth.currentUser?.uid as string), (docSnap) => {
-    //             if (docSnap.exists()) {
-    //                 const user = docSnap.data() as User;
-    //                 setMoney(user.money);
-    //             }
-    //         })
-    //         const usMatches = onSnapshot(query(collection(firestore, "matches"), orderBy("plannedAt")), (docSnap) => {
-    //             setMatches(docSnap.docs.map((m) => m.data() as Match));
-    //         })
-    //         const usTournaments = onSnapshot(query(collection(firestore, "tournaments"), orderBy("ownerName")), (docSanp) => {
-    //             setTournaments(docSanp.docs.map((t) => t.data() as Tournament));
-    //         })
-            
-    //         return () => {            
-    //             unsubscribeAuthChange();
-    //             usUser();
-    //             usMatches();
-    //             usTournaments();
-    //             console.log("Limpiando listeners")
-    //         };
-    //     }
-
-    // }, [auth, firestore, setMoney, setMatches, setTournaments, router]);
-
     useFocusEffect(
         useCallback(() => {
-            // const unsubscribeAuthChange = onAuthStateChanged(auth, (u) => {
-            //     if (u) {
-            //         console.log("LogIn: "+u.displayName);
-            //         // Listener para actualizaciones en tiempo real
-                    
-            //     } else {
-            //         console.log("LogOut");
-            //     }
-            // })
     
             const usUser = onSnapshot(doc(firestore, "users", auth.currentUser?.uid as string), (docSnap) => {
                 if (docSnap.exists()) {
                     const user = docSnap.data() as User;
                     setMoney(user.money);
+                    setUser(user);
                 }
             })
             const usMatches = onSnapshot(query(collection(firestore, "matches"), orderBy("plannedAt")), (docSnap) => {
@@ -112,7 +67,7 @@ export default function TabLayout () {
                 usTournaments();
                 // console.log("Limpiando listeners")
             };
-        }, [auth, firestore, setMoney, setMatches, setTournaments])
+        }, [auth, firestore, setMoney, setMatches, setTournaments, setUser])
     )
 
     return (

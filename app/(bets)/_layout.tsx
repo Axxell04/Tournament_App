@@ -15,6 +15,10 @@ export default function BetsLayout () {
                 headerShown: false
             }}
             />
+            <Stack.Screen name="camera_scan" options={{
+                headerShown: false
+            }}
+            />
         </Stack>
     )
 }
