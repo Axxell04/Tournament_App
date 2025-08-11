@@ -53,7 +53,7 @@ export default function ListCodes () {
                     :
                     <YStack gap={10} p={10}>
                         {codes.map((code) => (
-                            <CodeCard key={code.id} code={code} />
+                            <CodeCard role="admin" key={code.id} code={code} />
                         ))}
                     </YStack>
                     }

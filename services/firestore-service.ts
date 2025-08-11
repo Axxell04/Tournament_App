@@ -293,6 +293,18 @@ export class FirestoreService {
             return [];
         }
     }
+    
+    async getCodesClaimed (userId: string) {
+        try {
+            const snapshot = await getDocs(query(collection(this.firestore, "codes"), where("claimedId", "==", userId)));
+            const codes = snapshot.docs.map((c) => c.data() as Code);
+            return codes;
+        } catch (error) {
+            console.log(error);
+            return [];
+        }
+
+    }
 
     async claimCode (userId: string, codeText: string) {
         try {
@@ -303,7 +315,7 @@ export class FirestoreService {
                 const snapUser = await getDoc(doc(this.firestore, `users`, userId));
                 const user = snapUser.data() as User;
                 await updateDoc(doc(this.firestore, "users", userId), { money: user.money + code.value })
-                await updateDoc(doc(this.firestore, "codes", code.id as string), { claimed: true });
+                await updateDoc(doc(this.firestore, "codes", code.id as string), { claimedId: userId, claimed: true });
                 return true;
             }
             return null;

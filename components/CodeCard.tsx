@@ -8,7 +8,7 @@ import { ToastAndroid } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { Button, Paragraph, Stack, XStack, YStack } from "tamagui";
 
-export default function CodeCard ({ code }: { code: Code }) {
+export default function CodeCard ({ code, role="user" }: { code: Code, role?: "user" | "admin" }) {
     const [ codeSVG, setCodeSVG ] = useState<any>();
     const [ viewQR, setViewQR ] = useState(false);
 
@@ -80,8 +80,8 @@ export default function CodeCard ({ code }: { code: Code }) {
             >
                 <Paragraph color={"$color08"}>
                     {code.text}
-                </Paragraph>
-                {code.claimed 
+                </Paragraph>                
+                {role === "admin" && (code.claimed 
                 ?
                 <Stack p={5} bg={"$color"} rounded={10000} borderWidth={1} borderColor={"$color"}>
                     <Check size={20} color={"$background"} />
@@ -90,6 +90,7 @@ export default function CodeCard ({ code }: { code: Code }) {
                 <Stack p={5} bg={"$colorTransparent"} rounded={10000} borderWidth={1} borderColor={"$color"}>
                     <Check size={20} color={"$color"} />
                 </Stack>
+                )
                 }
             </XStack>
             {viewQR &&
@@ -97,6 +98,8 @@ export default function CodeCard ({ code }: { code: Code }) {
                 <Paragraph color={"$color08"}>
                     $ {code.value}
                 </Paragraph>
+                {role === "admin" &&
+                <>
                 <Button chromeless color={"$color06"}
                     icon={<ClipboardCopy size={20} color={"$color06"} />}
                     onPress={copyCode}
@@ -115,6 +118,8 @@ export default function CodeCard ({ code }: { code: Code }) {
                 >
                     Descargar
                 </Button>
+                </>
+                }
             </YStack>
             }
         </YStack>
