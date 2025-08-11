@@ -2,9 +2,9 @@
   "expo": {
     "name": "Tournament",
     "slug": "Tournament",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon-Tournament.png",
     "scheme": "tournament",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/adaptive-icon-Tournament.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

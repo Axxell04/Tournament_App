@@ -30,7 +30,7 @@ export default function ListBets () {
             const loadCodes = async () => {
                 setLoading(true);
                 const fsService = new FirestoreService(firestore);
-                setCodes(await fsService.getCodes(auth.currentUser?.uid as string));
+                setCodes(await fsService.getCodesClaimed(auth.currentUser?.uid as string));
                 setLoading(false);
             }
             loadBets();

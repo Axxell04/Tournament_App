@@ -34,7 +34,7 @@ export default function Index() {
                 ✅ Estadísticas en vivo
               </Paragraph>
               <Paragraph>                
-                ✅ Peleá por el primer lugar
+                ✅ Pelea por el primer lugar
               </Paragraph>
             </YStack>
           </YStack>
